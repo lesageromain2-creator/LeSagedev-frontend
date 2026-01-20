@@ -3,603 +3,220 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
+const navItems = [
+  { href: '/', label: 'Accueil' },
+  { href: '/offres', label: 'Offres' },
+  { href: '/portfolio', label: 'Portfolio' },
+  { href: '/reservation', label: 'Réservation' },
+  { href: '/contact', label: 'Contact' },
+];
+
 export default function Header({ settings = {} }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
 
-  const siteName = settings.site_name || 'Le Gourmet Parisien';
-  const restaurantStatus = settings.restaurant_status || 'open';
+  const siteName = settings.site_name || 'Studio Web Breizh';
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
+    const handleScroll = () => setScrolled(window.scrollY > 24);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('authToken');
     setIsLoggedIn(!!token);
   }, []);
 
   useEffect(() => {
-    // Détecter la taille d'écran côté client uniquement
-    const handleResize = () => setIsMobile(window.innerWidth <= 1024);
-    handleResize(); // Initialiser
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    // Empêcher le scroll quand le menu est ouvert
-    if (menuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
   }, [menuOpen]);
 
   const handleLogout = () => {
-    localStorage.removeItem('auth_token');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken');
+    }
     setIsLoggedIn(false);
     setMenuOpen(false);
     router.push('/');
   };
 
-  const closeMenu = () => setMenuOpen(false);
+  const isActive = (href) => {
+    if (href === '/') return router.pathname === '/';
+    return router.pathname.startsWith(href);
+  };
 
   return (
-    <>
-      <header style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: menuOpen ? 998 : 1000, // Passer derrière le menu mobile quand ouvert
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        background: scrolled ? 'rgba(255, 255, 255, 0.98)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        boxShadow: scrolled ? '0 8px 32px rgba(0, 0, 0, 0.08)' : 'none'
-      }}>
-        <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          padding: '20px 30px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          {/* Logo */}
-          <Link href="/" onClick={closeMenu} style={{
-            textDecoration: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            zIndex: menuOpen ? 998 : 1001, // Passer derrière le menu mobile quand ouvert
-            transition: 'transform 0.3s ease'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}>
-              <div style={{
-                width: '50px',
-                height: '50px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: scrolled ? 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)' : 'rgba(255, 255, 255, 0.2)',
-                borderRadius: '12px',
-                color: 'white',
-                fontSize: '1.8em',
-                boxShadow: scrolled ? '0 4px 12px rgba(231, 76, 60, 0.3)' : '0 4px 12px rgba(0, 0, 0, 0.2)',
-                backdropFilter: !scrolled ? 'blur(10px)' : 'none',
-                transition: 'all 0.3s ease'
-              }}>
-                🍽️
-              </div>
-              <span style={{
-                fontSize: '1.5em',
-                fontWeight: 800,
-                color: scrolled ? '#e74c3c' : 'white',
-                letterSpacing: '-0.5px',
-                textShadow: !scrolled ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
-                transition: 'all 0.3s ease'
-              }}>
-                {siteName}
-              </span>
-            </div>
-          </Link>
+    <header
+      className={`fixed inset-x-0 top-0 z-40 transition-all ${
+        scrolled ? 'backdrop-blur-xl bg-slate-950/80 border-b border-white/10' : 'bg-transparent'
+      }`}
+    >
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 md:px-6">
+        <Link 
+          href="/"
+          className="flex items-center gap-3"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/40">
+            <span className="text-lg font-black text-white">SB</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-heading text-sm font-semibold tracking-tight text-white md:text-base">
+              {siteName}
+            </span>
+            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-400">
+              Studio web breton
+            </span>
+          </div>
+        </Link>
 
-          {/* Navigation Desktop */}
-          {!isMobile && (
-            <nav style={{
-              display: 'flex',
-              gap: '8px'
-            }}>
-              <Link href="/" style={{
-                textDecoration: 'none',
-                color: scrolled ? '#2c3e50' : 'white',
-                fontWeight: 600,
-                padding: '10px 20px',
-                borderRadius: '12px',
-                transition: 'all 0.3s ease',
-                fontSize: '0.95em',
-                background: router.pathname === '/' ? (scrolled ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.2)') : 'transparent',
-                borderBottom: router.pathname === '/' ? '2px solid #e74c3c' : '2px solid transparent',
-                textShadow: !scrolled ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none'
-              }}>
-                Accueil
-              </Link>
-              <Link href="/categories" style={{
-                textDecoration: 'none',
-                color: scrolled ? '#2c3e50' : 'white',
-                fontWeight: 600,
-                padding: '10px 20px',
-                borderRadius: '12px',
-                transition: 'all 0.3s ease',
-                fontSize: '0.95em',
-                background: router.pathname === '/categories' ? (scrolled ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.2)') : 'transparent',
-                borderBottom: router.pathname === '/categories' ? '2px solid #e74c3c' : '2px solid transparent',
-                textShadow: !scrolled ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none'
-              }}>
-                Carte
-              </Link>
-              <Link href="/menus" style={{
-                textDecoration: 'none',
-                color: scrolled ? '#2c3e50' : 'white',
-                fontWeight: 600,
-                padding: '10px 20px',
-                borderRadius: '12px',
-                transition: 'all 0.3s ease',
-                fontSize: '0.95em',
-                background: router.pathname === '/menus' ? (scrolled ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.2)') : 'transparent',
-                borderBottom: router.pathname === '/menus' ? '2px solid #e74c3c' : '2px solid transparent',
-                textShadow: !scrolled ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none'
-              }}>
-                Menus
-              </Link>
-              <Link href="/reservation" style={{
-                textDecoration: 'none',
-                color: scrolled ? '#2c3e50' : 'white',
-                fontWeight: 600,
-                padding: '10px 20px',
-                borderRadius: '12px',
-                transition: 'all 0.3s ease',
-                fontSize: '0.95em',
-                background: router.pathname === '/reservation' ? (scrolled ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.2)') : 'transparent',
-                borderBottom: router.pathname === '/reservation' ? '2px solid #e74c3c' : '2px solid transparent',
-                textShadow: !scrolled ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none'
-              }}>
-                Réserver
-              </Link>
-              {isLoggedIn && (
-                <Link href="/favorites" style={{
-                  textDecoration: 'none',
-                  color: scrolled ? '#2c3e50' : 'white',
-                  fontWeight: 600,
-                  padding: '10px 20px',
-                  borderRadius: '12px',
-                  transition: 'all 0.3s ease',
-                  fontSize: '0.95em',
-                  background: router.pathname === '/favorites' ? (scrolled ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.2)') : 'transparent',
-                  borderBottom: router.pathname === '/favorites' ? '2px solid #e74c3c' : '2px solid transparent',
-                  textShadow: !scrolled ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none'
-                }}>
-                  Favoris
-                </Link>
+        <nav className="hidden items-center gap-6 text-sm font-medium text-slate-200 md:flex">
+          {navItems.map((item) => (
+            <Link 
+              key={item.href} 
+              href={item.href}
+              className={`relative transition-colors ${
+                isActive(item.href)
+                  ? 'text-white'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              {item.label}
+              {isActive(item.href) && (
+                <span className="absolute -bottom-1 left-0 right-0 h-[2px] rounded-full bg-gradient-to-r from-secondary to-primary" />
               )}
-              <Link href="/contact" style={{
-                textDecoration: 'none',
-                color: scrolled ? '#2c3e50' : 'white',
-                fontWeight: 600,
-                padding: '10px 20px',
-                borderRadius: '12px',
-                transition: 'all 0.3s ease',
-                fontSize: '0.95em',
-                background: router.pathname === '/contact' ? (scrolled ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.2)') : 'transparent',
-                borderBottom: router.pathname === '/contact' ? '2px solid #e74c3c' : '2px solid transparent',
-                textShadow: !scrolled ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none'
-              }}>
-                Contact
-              </Link>
-              {isLoggedIn && (
-                <Link href="/dashboard" style={{
-                  textDecoration: 'none',
-                  color: scrolled ? '#2c3e50' : 'white',
-                  fontWeight: 600,
-                  padding: '10px 20px',
-                  borderRadius: '12px',
-                  transition: 'all 0.3s ease',
-                  fontSize: '0.95em',
-                  background: router.pathname === '/dashboard' ? (scrolled ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.2)') : 'transparent',
-                  borderBottom: router.pathname === '/dashboard' ? '2px solid #e74c3c' : '2px solid transparent',
-                  textShadow: !scrolled ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none'
-                }}>
+            </Link>
+          ))}
+          <div className="ml-4 flex items-center gap-2">
+            {isLoggedIn ? (
+              <>
+                <Link 
+                  href="/dashboard"
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-white/10"
+                >
                   Dashboard
                 </Link>
-              )}
-            </nav>
-          )}
-
-          {/* Menu Mobile Overlay */}
-          {menuOpen && (
-            <div onClick={closeMenu} style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              background: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 1001, // Au-dessus du header
-              animation: 'fadeIn 0.3s ease'
-            }} />
-          )}
-
-          {/* Menu Mobile Sidebar */}
-          {isMobile && (
-            <div style={{
-              position: 'fixed',
-              top: 0,
-              right: menuOpen ? 0 : '-100%',
-              width: '100%',
-              maxWidth: '400px',
-              height: '100vh',
-              background: 'white',
-              transition: 'right 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-              zIndex: 1002, // Au-dessus de tout (overlay + header)
-              display: 'flex',
-              flexDirection: 'column',
-              padding: '30px',
-              overflowY: 'auto',
-              boxShadow: '-5px 0 25px rgba(0, 0, 0, 0.1)'
-            }}>
-              {/* Header Mobile Menu */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '30px',
-                paddingBottom: '20px',
-                borderBottom: '2px solid #f0f0f0'
-              }}>
-                <span style={{
-                  fontSize: '1.5em',
-                  fontWeight: 800,
-                  color: '#e74c3c'
-                }}>
-                  Menu
-                </span>
-                <button onClick={closeMenu} style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  background: '#f8f9fa',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '1.5em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.3s ease'
-                }}>
-                  ✕
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-full bg-gradient-to-r from-primary to-secondary px-3 py-1.5 text-xs font-semibold text-white shadow-md hover:shadow-lg"
+                >
+                  Déconnexion
                 </button>
-              </div>
-
-              {/* Links Mobile */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <Link href="/" onClick={closeMenu} style={{
-                  textDecoration: 'none',
-                  padding: '16px 20px',
-                  color: '#2c3e50',
-                  fontSize: '1.1em',
-                  borderRadius: '12px',
-                  background: router.pathname === '/' ? 'rgba(231, 76, 60, 0.1)' : 'transparent',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  transition: 'all 0.3s ease'
-                }}>
-                  <span style={{ fontSize: '1.3em' }}>🏠</span>
-                  Accueil
-                </Link>
-                <Link href="/categories" onClick={closeMenu} style={{
-                  textDecoration: 'none',
-                  padding: '16px 20px',
-                  color: '#2c3e50',
-                  fontSize: '1.1em',
-                  borderRadius: '12px',
-                  background: router.pathname === '/categories' ? 'rgba(231, 76, 60, 0.1)' : 'transparent',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  transition: 'all 0.3s ease'
-                }}>
-                  <span style={{ fontSize: '1.3em' }}>📋</span>
-                  Carte
-                </Link>
-                <Link href="/menus" onClick={closeMenu} style={{
-                  textDecoration: 'none',
-                  padding: '16px 20px',
-                  color: '#2c3e50',
-                  fontSize: '1.1em',
-                  borderRadius: '12px',
-                  background: router.pathname === '/menus' ? 'rgba(231, 76, 60, 0.1)' : 'transparent',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  transition: 'all 0.3s ease'
-                }}>
-                  <span style={{ fontSize: '1.3em' }}>🍽️</span>
-                  Menus
-                </Link>
-                <Link href="/reservation" onClick={closeMenu} style={{
-                  textDecoration: 'none',
-                  padding: '16px 20px',
-                  color: '#2c3e50',
-                  fontSize: '1.1em',
-                  borderRadius: '12px',
-                  background: router.pathname === '/reservation' ? 'rgba(231, 76, 60, 0.1)' : 'transparent',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  transition: 'all 0.3s ease'
-                }}>
-                  <span style={{ fontSize: '1.3em' }}>📅</span>
-                  Réserver
-                </Link>
-                {isLoggedIn && (
-                  <Link href="/favorites" onClick={closeMenu} style={{
-                    textDecoration: 'none',
-                    padding: '16px 20px',
-                    color: '#2c3e50',
-                    fontSize: '1.1em',
-                    borderRadius: '12px',
-                    background: router.pathname === '/favorites' ? 'rgba(231, 76, 60, 0.1)' : 'transparent',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    transition: 'all 0.3s ease'
-                  }}>
-                    <span style={{ fontSize: '1.3em' }}>❤️</span>
-                    Favoris
-                  </Link>
-                )}
-                <Link href="/contact" onClick={closeMenu} style={{
-                  textDecoration: 'none',
-                  padding: '16px 20px',
-                  color: '#2c3e50',
-                  fontSize: '1.1em',
-                  borderRadius: '12px',
-                  background: router.pathname === '/contact' ? 'rgba(231, 76, 60, 0.1)' : 'transparent',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  transition: 'all 0.3s ease'
-                }}>
-                  <span style={{ fontSize: '1.3em' }}>📞</span>
-                  Contact
-                </Link>
-                {isLoggedIn && (
-                  <Link href="/dashboard" onClick={closeMenu} style={{
-                    textDecoration: 'none',
-                    padding: '16px 20px',
-                    color: '#2c3e50',
-                    fontSize: '1.1em',
-                    borderRadius: '12px',
-                    background: router.pathname === '/dashboard' ? 'rgba(231, 76, 60, 0.1)' : 'transparent',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    transition: 'all 0.3s ease'
-                  }}>
-                    <span style={{ fontSize: '1.3em' }}>📊</span>
-                    Dashboard
-                  </Link>
-                )}
-              </div>
-
-              {/* Footer Mobile */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px',
-                paddingTop: '20px',
-                borderTop: '2px solid #f0f0f0',
-                marginTop: 'auto'
-              }}>
-                <div style={{
-                  padding: '12px 20px',
-                  borderRadius: '24px',
-                  background: restaurantStatus === 'open' ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)' : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)',
-                  color: restaurantStatus === 'open' ? '#155724' : '#721c24',
-                  fontWeight: 600,
-                  textAlign: 'center',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}>
-                  <span style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: restaurantStatus === 'open' ? '#28a745' : '#dc3545',
-                    animation: 'pulse 2s infinite'
-                  }}></span>
-                  {restaurantStatus === 'open' ? 'Ouvert' : 'Fermé'}
-                </div>
-                {isLoggedIn ? (
-                  <button onClick={handleLogout} style={{
-                    width: '100%',
-                    padding: '14px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                    color: 'white',
-                    border: 'none',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontSize: '1em',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px'
-                  }}>
-                    <span>🚪</span> Déconnexion
-                  </button>
-                ) : (
-                  <Link href="/login" onClick={closeMenu} style={{
-                    width: '100%',
-                    padding: '14px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                    color: 'white',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    fontSize: '1em',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px'
-                  }}>
-                    <span>👤</span> Connexion
-                  </Link>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Actions Desktop */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px'
-          }}>
-            {!isMobile && (
-              <div style={{
-                padding: '10px 20px',
-                borderRadius: '24px',
-                fontWeight: 600,
-                fontSize: '0.9em',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: restaurantStatus === 'open' ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)' : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)',
-                color: restaurantStatus === 'open' ? '#155724' : '#721c24',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-              }}>
-                <span style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: restaurantStatus === 'open' ? '#28a745' : '#dc3545',
-                  animation: 'pulse 2s infinite'
-                }}></span>
-                {restaurantStatus === 'open' ? 'Ouvert' : 'Fermé'}
-              </div>
-            )}
-
-            {!isMobile && isLoggedIn && (
-              <button onClick={handleLogout} style={{
-                width: '45px',
-                height: '45px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                border: 'none',
-                fontSize: '1.3em',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(231, 76, 60, 0.3)',
-                transition: 'all 0.3s ease'
-              }}>
-                🚪
-              </button>
-            )}
-
-            {!isMobile && !isLoggedIn && (
-              <Link href="/login" style={{
-                width: '45px',
-                height: '45px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                fontSize: '1.3em',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(231, 76, 60, 0.3)',
-                textDecoration: 'none',
-                transition: 'all 0.3s ease'
-              }}>
-                👤
+              </>
+            ) : (
+              <Link 
+                href="/login"
+                className="rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-semibold text-slate-100 hover:bg-white/10"
+              >
+                Espace client
               </Link>
             )}
-
-            {/* Hamburger Menu (Mobile Only) */}
-            {isMobile && (
-              <button onClick={() => setMenuOpen(!menuOpen)} style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '10px',
-                zIndex: 1003 // Au-dessus du menu pour rester cliquable
-              }}>
-                <span style={{
-                  width: '28px',
-                  height: '3px',
-                  background: scrolled ? '#2c3e50' : 'white',
-                  borderRadius: '3px',
-                  transition: 'all 0.3s ease',
-                  transform: menuOpen ? 'rotate(45deg) translate(9px, 9px)' : 'none'
-                }}></span>
-                <span style={{
-                  width: '28px',
-                  height: '3px',
-                  background: scrolled ? '#2c3e50' : 'white',
-                  borderRadius: '3px',
-                  transition: 'all 0.3s ease',
-                  opacity: menuOpen ? 0 : 1,
-                  transform: menuOpen ? 'translateX(20px)' : 'none'
-                }}></span>
-                <span style={{
-                  width: '28px',
-                  height: '3px',
-                  background: scrolled ? '#2c3e50' : 'white',
-                  borderRadius: '3px',
-                  transition: 'all 0.3s ease',
-                  transform: menuOpen ? 'rotate(-45deg) translate(9px, -9px)' : 'none'
-                }}></span>
-              </button>
-            )}
           </div>
-        </div>
-      </header>
+        </nav>
 
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(1.2); }
-        }
-      `}</style>
-    </>
+        <button
+          type="button"
+          aria-label="Ouvrir le menu"
+          onClick={() => setMenuOpen((v) => !v)}
+          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-slate-950/60 text-slate-100 shadow-md transition hover:bg-slate-900 md:hidden"
+        >
+          <span
+            className={`absolute h-0.5 w-4 rounded-full bg-current transition-transform ${
+              menuOpen ? 'translate-y-0 rotate-45' : '-translate-y-1.5'
+            }`}
+          />
+          <span
+            className={`absolute h-0.5 w-4 rounded-full bg-current transition-opacity ${
+              menuOpen ? 'opacity-0' : 'opacity-100'
+            }`}
+          />
+          <span
+            className={`absolute h-0.5 w-4 rounded-full bg-current transition-transform ${
+              menuOpen ? 'translate-y-0 -rotate-45' : 'translate-y-1.5'
+            }`}
+          />
+        </button>
+      </div>
+
+      {menuOpen && (
+        <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden" />
+      )}
+
+      <div
+        className={`fixed inset-y-0 right-0 z-40 w-[78%] max-w-xs transform bg-slate-950/95 px-5 py-6 shadow-2xl transition-transform md:hidden ${
+          menuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary">
+              <span className="text-sm font-black text-white">SB</span>
+            </div>
+            <span className="text-sm font-semibold text-white">
+              {siteName}
+            </span>
+          </div>
+          <button
+            type="button"
+            aria-label="Fermer le menu"
+            onClick={() => setMenuOpen(false)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-slate-200 hover:bg-white/10"
+          >
+            ✕
+          </button>
+        </div>
+
+        <nav className="flex flex-col gap-2 text-sm font-medium text-slate-100">
+          {navItems.map((item) => (
+            <Link 
+              key={item.href} 
+              href={item.href}
+              onClick={() => setMenuOpen(false)}
+              className={`rounded-xl px-4 py-2.5 ${
+                isActive(item.href)
+                  ? 'bg-white/10 text-white'
+                  : 'text-slate-200 hover:bg-white/5'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="mt-6 border-t border-white/10 pt-4 text-sm">
+          {isLoggedIn ? (
+            <div className="space-y-3">
+              <Link 
+                href="/dashboard"
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-full border border-white/15 bg-white/5 px-4 py-2 text-center font-semibold text-slate-100 hover:bg-white/10"
+              >
+                Accéder au dashboard
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="block w-full rounded-full bg-gradient-to-r from-primary to-secondary px-4 py-2 text-center font-semibold text-white shadow-md hover:shadow-lg"
+              >
+                Déconnexion
+              </button>
+            </div>
+          ) : (
+            <Link 
+              href="/login"
+              onClick={() => setMenuOpen(false)}
+              className="block rounded-full bg-primary px-4 py-2 text-center font-semibold text-white shadow-md hover:bg-primary/90"
+            >
+              Espace client
+            </Link>
+          )}
+        </div>
+      </div>
+    </header>
   );
 }
