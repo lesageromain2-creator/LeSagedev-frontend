@@ -99,7 +99,7 @@ export default function Login() {
   return (
     <>
       <Head>
-        <title>Connexion - {settings.site_name || 'Restaurant'}</title>
+        <title>Connexion - {settings.site_name || 'LE SAGE'}</title>
       </Head>
 
       <Header settings={settings} />
@@ -298,31 +298,31 @@ export default function Login() {
                   <path d="M2 12l10 5 10-5"/>
                 </svg>
               </div>
-              <h2>Réservez en toute simplicité</h2>
+              <h2>Espace Client Professionnel</h2>
               <ul>
                 <li>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  <span>Réservation en ligne 24/7</span>
+                  <span>Gestion de vos projets</span>
                 </li>
                 <li>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  <span>Confirmation instantanée</span>
+                  <span>Suivi en temps réel</span>
                 </li>
                 <li>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  <span>Gestion de vos réservations</span>
+                  <span>Rendez-vous et consultations</span>
                 </li>
                 <li>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  <span>Offres exclusives membres</span>
+                  <span>Support dédié</span>
                 </li>
               </ul>
             </div>

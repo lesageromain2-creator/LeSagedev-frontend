@@ -1,8 +1,8 @@
-// frontend/pages/dashboard.js - VERSION COMPLÈTE AVEC FAVORIS INTÉGRÉS
+// frontend/pages/dashboard.js - Dashboard Agence Web LE SAGE
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { Heart, Clock, Flame, AlertCircle, Trash2, Eye, ShoppingCart } from 'lucide-react';
+import { Calendar, FolderOpen, FileText, User, Settings, LogOut, Briefcase, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { 
@@ -11,11 +11,7 @@ import {
   fetchSettings, 
   getMyReservations,
   cancelReservation,
-  fetchFavorites, 
-  removeFavorite, 
-  getFavoritesCount,
   deleteReservation
-
 } from '../utils/api';
 
 export default function Dashboard() {
@@ -26,55 +22,11 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState({
     reservations: 0,
-    favorites: 0,
-    reviews: 0,
-    points: 0
+    projects: 0,
+    files: 0
   });
   const [mounted, setMounted] = useState(false);
-
-// Pour reservation: 
-
-
-// ============================================
-// 3. FRONTEND: Dans votre composant Dashboard
-// Ajouter cette fonction et ce bouton
-// ============================================
-
-// État pour gérer la suppression
-const [deleteLoading, setDeleteLoading] = useState(null);
-
-// Fonction pour supprimer une réservation
-const handleDeleteReservation = async (reservationId) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer cette réservation ?')) {
-    return;
-  }
-
-  setDeleteLoading(reservationId);
-  
-  try {
-    await deleteReservation(reservationId);
-    
-    // Recharger les réservations après suppression
-    const data = await getMyReservations();
-    setReservations(data);
-    
-    // Message de succès (optionnel)
-    alert('Réservation supprimée avec succès');
-  } catch (error) {
-    console.error('Erreur suppression:', error);
-    alert('Erreur lors de la suppression de la réservation');
-  } finally {
-    setDeleteLoading(null);
-  }
-};
-
-
-
-
-  // États pour les favoris
-  const [favorites, setFavorites] = useState([]);
-  const [favoritesLoading, setFavoritesLoading] = useState(false);
-  const [removingFavoriteId, setRemovingFavoriteId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(null);
 
   // États pour les réservations
   const [reservations, setReservations] = useState([]);
@@ -85,13 +37,6 @@ const handleDeleteReservation = async (reservationId) => {
     loadUserData();
     setTimeout(() => setMounted(true), 50);
   }, []);
-
- // Charger les favoris quand l'onglet change
-useEffect(() => {
-  if (activeTab === 'favorites' && user) {
-    loadFavorites();
-  }
-}, [activeTab, user]);
 
   // Charger les réservations quand l'onglet change
   useEffect(() => {
@@ -118,10 +63,7 @@ useEffect(() => {
       setSettings(settingsData);
 
       // Charger les stats
-      await Promise.all([
-        loadReservationsForStats(),
-        loadFavoritesForStats()
-      ]);
+      await loadReservationsForStats();
 
     } catch (error) {
       console.error('Erreur chargement données:', error);
@@ -129,64 +71,6 @@ useEffect(() => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // ✅ Charger le compte des favoris pour les stats
-  const loadFavoritesForStats = async () => {
-    try {
-      const count = await getFavoritesCount();
-      setStats(prev => ({ ...prev, favorites: count }));
-    } catch (error) {
-      console.error('Erreur stats favoris:', error);
-    }
-  };
-
-  // ✅ Charger la liste complète des favoris
-  
-const loadFavorites = async () => {
-  try {
-    setFavoritesLoading(true);
-    const data = await fetchFavorites();
-    console.log('Données favoris reçues:', data); // Debug
-    // ✅ Utiliser data.favorites comme dans favorites.js
-    setFavorites(data.favorites || []);
-    console.log('Favoris définis:', data.favorites || []); // Debug
-  } catch (error) {
-    console.error('Erreur chargement favoris:', error);
-  } finally {
-    setFavoritesLoading(false);
-  }
-};
-
-  // ✅ Retirer un favori
-  const handleRemoveFavorite = async (dishId) => {
-    if (!confirm('Retirer ce plat de vos favoris ?')) return;
-
-    try {
-      setRemovingFavoriteId(dishId);
-      await removeFavorite(dishId);
-      setFavorites(prev => prev.filter(fav => fav.id_dish !== dishId));
-      await loadFavoritesForStats();
-    } catch (error) {
-      console.error('Erreur suppression:', error);
-      alert('Impossible de retirer ce favori');
-    } finally {
-      setRemovingFavoriteId(null);
-    }
-  };
-
-  // ✅ Commander un plat
-  const handleOrder = (dish) => {
-    alert(`Commander: ${dish.name}\n\nRéservez une table pour profiter de ce plat !`);
-  };
-
-  // ✅ Obtenir les badges diététiques
-  const getDietaryBadges = (dish) => {
-    const badges = [];
-    if (dish.is_vegetarian) badges.push({ icon: '🌱', label: 'Végétarien', color: '#10b981' });
-    if (dish.is_vegan) badges.push({ icon: '🥬', label: 'Végétalien', color: '#059669' });
-    if (dish.is_gluten_free) badges.push({ icon: '🌾', label: 'Sans gluten', color: '#f59e0b' });
-    return badges;
   };
 
   // Charger les réservations pour les stats
@@ -215,6 +99,27 @@ const loadFavorites = async () => {
       console.error('Erreur chargement réservations:', error);
     } finally {
       setReservationsLoading(false);
+    }
+  };
+
+  // Supprimer une réservation
+  const handleDeleteReservation = async (reservationId) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette réservation ?')) {
+      return;
+    }
+
+    setDeleteLoading(reservationId);
+    
+    try {
+      await deleteReservation(reservationId);
+      await loadReservations();
+      await loadReservationsForStats();
+      alert('Réservation supprimée avec succès');
+    } catch (error) {
+      console.error('Erreur suppression:', error);
+      alert('Erreur lors de la suppression de la réservation');
+    } finally {
+      setDeleteLoading(null);
     }
   };
 
@@ -252,10 +157,10 @@ const loadFavorites = async () => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      pending: { text: 'En attente', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
-      confirmed: { text: 'Confirmée', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' },
-      cancelled: { text: 'Annulée', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' },
-      completed: { text: 'Terminée', color: '#6b7280', bg: 'rgba(107, 114, 128, 0.15)' }
+      pending: { text: 'En attente', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', icon: Clock },
+      confirmed: { text: 'Confirmée', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', icon: CheckCircle },
+      cancelled: { text: 'Annulée', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', icon: XCircle },
+      completed: { text: 'Terminée', color: '#6b7280', bg: 'rgba(107, 114, 128, 0.15)', icon: CheckCircle }
     };
     return badges[status] || badges.pending;
   };
@@ -301,14 +206,14 @@ const loadFavorites = async () => {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: #0a0a1e;
+            background: #0A0E27;
             color: white;
           }
           .loading-spinner {
             width: 50px;
             height: 50px;
             border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #667eea;
+            border-top-color: #0066FF;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin-bottom: 20px;
@@ -324,7 +229,7 @@ const loadFavorites = async () => {
   return (
     <>
       <Head>
-        <title>Mon Espace - {settings.site_name || 'Restaurant'}</title>
+        <title>Espace Client - {settings.site_name || 'LE SAGE'}</title>
       </Head>
 
       <Header settings={settings} />
@@ -349,7 +254,7 @@ const loadFavorites = async () => {
               <div className="user-info">
                 <h3>{user?.firstname} {user?.lastname}</h3>
                 <p>{user?.email}</p>
-                <span className="user-badge">{user?.role === 'admin' ? 'Admin' : 'Membre'}</span>
+                <span className="user-badge">Client</span>
               </div>
             </div>
 
@@ -358,12 +263,7 @@ const loadFavorites = async () => {
                 className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
                 onClick={() => setActiveTab('overview')}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="7" height="7"/>
-                  <rect x="14" y="3" width="7" height="7"/>
-                  <rect x="14" y="14" width="7" height="7"/>
-                  <rect x="3" y="14" width="7" height="7"/>
-                </svg>
+                <Briefcase size={20} />
                 <span>Vue d'ensemble</span>
               </button>
 
@@ -371,61 +271,41 @@ const loadFavorites = async () => {
                 className={`nav-item ${activeTab === 'reservations' ? 'active' : ''}`}
                 onClick={() => setActiveTab('reservations')}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                <span>Mes Réservations</span>
+                <Calendar size={20} />
+                <span>Mes Rendez-vous</span>
                 {stats.reservations > 0 && (
                   <span className="badge">{stats.reservations}</span>
                 )}
               </button>
 
               <button 
-                className={`nav-item ${activeTab === 'favorites' ? 'active' : ''}`}
-                onClick={() => setActiveTab('favorites')}
+                className={`nav-item ${activeTab === 'projects' ? 'active' : ''}`}
+                onClick={() => setActiveTab('projects')}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-                <span>Mes Favoris</span>
-                {stats.favorites > 0 && (
-                  <span className="badge">{stats.favorites}</span>
-                )}
+                <FolderOpen size={20} />
+                <span>Mes Projets</span>
+              </button>
+
+              <button 
+                className={`nav-item ${activeTab === 'files' ? 'active' : ''}`}
+                onClick={() => setActiveTab('files')}
+              >
+                <FileText size={20} />
+                <span>Mes Fichiers</span>
               </button>
 
               <button 
                 className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
                 onClick={() => setActiveTab('profile')}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
+                <User size={20} />
                 <span>Mon Profil</span>
-              </button>
-
-              <button 
-                className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-                onClick={() => setActiveTab('settings')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 1v6m0 6v6m6-12h-6m6 6h-6m-6-6h6m-6 6h6"/>
-                </svg>
-                <span>Paramètres</span>
               </button>
 
               <div className="nav-divider"></div>
 
               <button className="nav-item logout" onClick={handleLogout}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                  <polyline points="16 17 21 12 16 7"/>
-                  <line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
+                <LogOut size={20} />
                 <span>Déconnexion</span>
               </button>
             </nav>
@@ -436,14 +316,11 @@ const loadFavorites = async () => {
             <div className="main-header">
               <div>
                 <h1>{getGreeting()}, {user?.firstname} ! 👋</h1>
-                <p>Bienvenue dans votre espace personnel</p>
+                <p>Bienvenue dans votre espace client</p>
               </div>
               <button className="btn-primary" onClick={() => router.push('/reservation')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Nouvelle Réservation
+                <Calendar size={20} />
+                Nouveau Rendez-vous
               </button>
             </div>
 
@@ -452,54 +329,32 @@ const loadFavorites = async () => {
               <div className="content-section">
                 <div className="stats-grid">
                   <div className="stat-card" onClick={() => setActiveTab('reservations')} style={{ cursor: 'pointer' }}>
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
+                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #0066FF, #00D9FF)' }}>
+                      <Calendar size={28} color="white" />
                     </div>
                     <div className="stat-content">
                       <h3>{stats.reservations}</h3>
-                      <p>Réservations actives</p>
+                      <p>Rendez-vous actifs</p>
                     </div>
                   </div>
 
-                  <div className="stat-card" onClick={() => setActiveTab('favorites')} style={{ cursor: 'pointer' }}>
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f093fb, #f5576c)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                      </svg>
+                  <div className="stat-card" onClick={() => setActiveTab('projects')} style={{ cursor: 'pointer' }}>
+                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #FF6B35, #FF8C42)' }}>
+                      <FolderOpen size={28} color="white" />
                     </div>
                     <div className="stat-content">
-                      <h3>{stats.favorites}</h3>
-                      <p>Plats favoris</p>
+                      <h3>{stats.projects}</h3>
+                      <p>Projets en cours</p>
                     </div>
                   </div>
 
-                  <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #4facfe, #00f2fe)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                      </svg>
+                  <div className="stat-card" onClick={() => setActiveTab('files')} style={{ cursor: 'pointer' }}>
+                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #764ba2, #667eea)' }}>
+                      <FileText size={28} color="white" />
                     </div>
                     <div className="stat-content">
-                      <h3>{stats.reviews}</h3>
-                      <p>Avis laissés</p>
-                    </div>
-                  </div>
-
-                  <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #fa709a, #fee140)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="8" r="7"/>
-                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
-                      </svg>
-                    </div>
-                    <div className="stat-content">
-                      <h3>{stats.points}</h3>
-                      <p>Points fidélité</p>
+                      <h3>{stats.files}</h3>
+                      <p>Fichiers partagés</p>
                     </div>
                   </div>
                 </div>
@@ -508,35 +363,22 @@ const loadFavorites = async () => {
                   <h2>Actions Rapides</h2>
                   <div className="quick-actions">
                     <button className="action-btn" onClick={() => router.push('/reservation')}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
-                      <span>Réserver une table</span>
+                      <Calendar size={32} />
+                      <span>Prendre rendez-vous</span>
                     </button>
 
-                    <button className="action-btn" onClick={() => router.push('/menus')}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                      </svg>
-                      <span>Découvrir le menu</span>
+                    <button className="action-btn" onClick={() => router.push('/offres')}>
+                      <Briefcase size={32} />
+                      <span>Découvrir nos offres</span>
                     </button>
 
-                    <button className="action-btn" onClick={() => setActiveTab('favorites')}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                      </svg>
-                      <span>Mes favoris</span>
+                    <button className="action-btn" onClick={() => router.push('/portfolio')}>
+                      <FolderOpen size={32} />
+                      <span>Voir le portfolio</span>
                     </button>
 
                     <button className="action-btn" onClick={() => router.push('/contact')}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                      </svg>
+                      <FileText size={32} />
                       <span>Nous contacter</span>
                     </button>
                   </div>
@@ -550,9 +392,9 @@ const loadFavorites = async () => {
                 <div className="section-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                     <div>
-                      <h2>Mes Réservations</h2>
+                      <h2>Mes Rendez-vous</h2>
                       <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: '5px' }}>
-                        Gérez toutes vos réservations
+                        Gérez tous vos rendez-vous
                       </p>
                     </div>
                     <button 
@@ -582,30 +424,26 @@ const loadFavorites = async () => {
                   {reservationsLoading ? (
                     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
                       <div className="loading-spinner" style={{ margin: '0 auto 20px' }}></div>
-                      <p style={{ color: 'rgba(255,255,255,0.6)' }}>Chargement de vos réservations...</p>
+                      <p style={{ color: 'rgba(255,255,255,0.6)' }}>Chargement de vos rendez-vous...</p>
                     </div>
                   ) : reservations.length === 0 ? (
                     <div className="empty-state">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '80px', height: '80px', margin: '0 auto 20px' }}>
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
-                      <h3>Aucune réservation</h3>
-                      <p>Vous n'avez pas encore effectué de réservation</p>
+                      <Calendar size={80} />
+                      <h3>Aucun rendez-vous</h3>
+                      <p>Vous n'avez pas encore de rendez-vous programmé</p>
                       <button 
                         className="btn-primary"
                         onClick={() => router.push('/reservation')}
                         style={{ marginTop: '20px' }}
                       >
-                        Réserver une table
+                        Prendre rendez-vous
                       </button>
                     </div>
                   ) : (
                     <div className="reservations-grid">
                       {reservations.map((reservation) => {
                         const statusInfo = getStatusBadge(reservation.status);
+                        const StatusIcon = statusInfo.icon;
                         const canCancel = canCancelReservation(reservation);
                         const isCancelling = cancellingId === reservation.id;
 
@@ -629,79 +467,48 @@ const loadFavorites = async () => {
                                     border: `2px solid ${statusInfo.color}`
                                   }}
                                 >
+                                  <StatusIcon size={14} style={{ marginRight: '6px' }} />
                                   {statusInfo.text}
                                 </span>
                               </div>
                             </div>
 
-
-
                             <div className="reservation-body">
                               <div className="reservation-detail">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <circle cx="12" cy="12" r="10"/>
-                                  <polyline points="12 6 12 12 16 14"/>
-                                </svg>
+                                <Clock size={20} />
                                 <div>
                                   <strong>Heure</strong>
                                   <p>{formatTime(reservation.reservation_time)}</p>
                                 </div>
                               </div>
 
-                              <div className="reservation-detail">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                  <circle cx="9" cy="7" r="4"/>
-                                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                </svg>
-                                <div>
-                                  <strong>Personnes</strong>
-                                  <p>{reservation.number_of_people} personne{reservation.number_of_people > 1 ? 's' : ''}</p>
-                                </div>
-                              </div>
-
-                              
-
-                              {reservation.special_requests && (
+                              {reservation.meeting_type && (
                                 <div className="reservation-detail">
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                    <line x1="8" y1="21" x2="16" y2="21"/>
+                                    <line x1="12" y1="17" x2="12" y2="21"/>
                                   </svg>
                                   <div>
-                                    <strong>Demande spéciale</strong>
-                                    <p>{reservation.special_requests}</p>
+                                    <strong>Type</strong>
+                                    <p>{reservation.meeting_type === 'visio' ? 'Visioconférence' : 'Présentiel'}</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {reservation.message && (
+                                <div className="reservation-detail">
+                                  <FileText size={20} />
+                                  <div>
+                                    <strong>Message</strong>
+                                    <p>{reservation.message}</p>
                                   </div>
                                 </div>
                               )}
                             </div>
 
-                <button 
-                  className="btn-delete"
-                  onClick={() => handleDeleteReservation(reservation.id)}
-                  disabled={deleteLoading === reservation.id}
-                >
-                  {deleteLoading === reservation.id ? (
-                    <>
-                      <span className="spinner"></span>
-                      Suppression...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        <line x1="10" y1="11" x2="10" y2="17"/>
-                        <line x1="14" y1="11" x2="14" y2="17"/>
-                      </svg>
-                      Supprimer
-                    </>
-                  )}
-                </button>
-
-
-           {canCancel && (
-                              <div className="reservation-actions">
+                            <div className="reservation-actions">
+                              {canCancel && (
                                 <button
                                   className="btn-cancel-reservation"
                                   onClick={() => handleCancelReservation(reservation.id)}
@@ -714,19 +521,30 @@ const loadFavorites = async () => {
                                     </>
                                   ) : (
                                     <>
-                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <line x1="15" y1="9" x2="9" y2="15"/>
-                                        <line x1="9" y1="9" x2="15" y2="15"/>
-                                      </svg>
-                                      Annuler la réservation
+                                      <XCircle size={18} />
+                                      Annuler le rendez-vous
                                     </>
                                   )}
                                 </button>
-                              </div>
-
-                              
-                            )}
+                              )}
+                              <button 
+                                className="btn-delete"
+                                onClick={() => handleDeleteReservation(reservation.id)}
+                                disabled={deleteLoading === reservation.id}
+                              >
+                                {deleteLoading === reservation.id ? (
+                                  <>
+                                    <span className="spinner"></span>
+                                    Suppression...
+                                  </>
+                                ) : (
+                                  <>
+                                    <XCircle size={18} />
+                                    Supprimer
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -736,137 +554,40 @@ const loadFavorites = async () => {
               </div>
             )}
 
-{/* ✅ SECTION FAVORIS */}
-            {activeTab === 'favorites' && (
+            {/* Section Projets */}
+            {activeTab === 'projects' && (
               <div className="content-section">
                 <div className="section-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                    <div>
-                      <h2>❤️ Mes Plats Favoris</h2>
-                      <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: '5px' }}>
-                        {favorites.length} plat{favorites.length > 1 ? 's' : ''} que vous adorez
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button className="btn-refresh" onClick={loadFavorites} disabled={favoritesLoading}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: favoritesLoading ? 'spin 1s linear infinite' : 'none', width: '20px', height: '20px' }}>
-                          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                        </svg>
-                        Actualiser
-                      </button>
-                      <button className="btn-secondary" onClick={() => router.push('/categories')}>
-                        <Eye size={18} />
-                        Voir la carte
-                      </button>
-                    </div>
+                  <h2>Mes Projets</h2>
+                  <div className="empty-state">
+                    <FolderOpen size={80} />
+                    <h3>Aucun projet</h3>
+                    <p>Vos projets en cours apparaîtront ici</p>
+                    <button 
+                      className="btn-primary"
+                      onClick={() => router.push('/offres')}
+                      style={{ marginTop: '20px' }}
+                    >
+                      Découvrir nos offres
+                    </button>
                   </div>
-
-                  {favoritesLoading ? (
-                    <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                      <div className="loading-spinner" style={{ margin: '0 auto 20px' }}></div>
-                      <p style={{ color: 'rgba(255,255,255,0.6)' }}>Chargement de vos favoris...</p>
-                    </div>
-                  ) : favorites.length === 0 ? (
-                    <div className="empty-state">
-                      <Heart size={80} />
-                      <h3>Aucun favori</h3>
-                      <p>Explorez notre carte et ajoutez vos plats préférés</p>
-                      <button className="btn-primary" onClick={() => router.push('/categories')} style={{ marginTop: '20px' }}>
-                        Découvrir la carte
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="favorites-grid-dashboard">
-                      {favorites.map((dish) => {
-                        const dietaryBadges = getDietaryBadges(dish);
-                        const isRemoving = removingFavoriteId === dish.id_dish;
-
-                        return (
-                          <div key={dish.id_dish} className="favorite-card-dashboard">
-                            {/* Image */}
-                            <div className="favorite-image">
-                              {dish.image_url ? (
-                                <img src={dish.image_url} alt={dish.name} />
-                              ) : (
-                                <div className="placeholder-image">🍽️</div>
-                              )}
-                              
-                              {/* Bouton supprimer */}
-                              <button 
-                                className={`remove-favorite-btn ${isRemoving ? 'removing' : ''}`}
-                                onClick={() => handleRemoveFavorite(dish.id_dish)}
-                                disabled={isRemoving}
-                                title="Retirer des favoris"
-                              >
-                                {isRemoving ? <div className="spinner-tiny"></div> : <Trash2 size={18} />}
-                              </button>
-
-                              {/* Badges */}
-                              {dietaryBadges.length > 0 && (
-                                <div className="dietary-badges-overlay">
-                                  {dietaryBadges.map((badge, i) => (
-                                    <span key={i} className="dietary-badge" style={{ background: badge.color }} title={badge.label}>
-                                      {badge.icon}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Contenu */}
-                            <div className="favorite-content">
-                              <div className="favorite-header">
-                                <span className="category-tag">{dish.category_icon} {dish.category_name}</span>
-                                <span className="course-type">{dish.course_type}</span>
-                              </div>
-
-                              <h3 className="favorite-name">{dish.name}</h3>
-
-                              {dish.description && (
-                                <p className="favorite-description">{dish.description}</p>
-                              )}
-
-                              <div className="favorite-meta">
-                                {dish.preparation_time && (
-                                  <span className="meta-tag">
-                                    <Clock size={14} />
-                                    {dish.preparation_time} min
-                                  </span>
-                                )}
-                                {dish.calories && (
-                                  <span className="meta-tag">
-                                    <Flame size={14} />
-                                    {dish.calories} kcal
-                                  </span>
-                                )}
-                              </div>
-
-                              {dish.allergens && settings.show_allergens === '1' && (
-                                <div className="allergens-tag">
-                                  <AlertCircle size={14} />
-                                  <span>Allergènes: {dish.allergens}</span>
-                                </div>
-                              )}
-
-                              <div className="favorite-footer">
-                                {settings.show_prices === '1' && (
-                                  <div className="price-display">{parseFloat(dish.price).toFixed(2)}€</div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
-
-
-
-
+            {/* Section Fichiers */}
+            {activeTab === 'files' && (
+              <div className="content-section">
+                <div className="section-card">
+                  <h2>Mes Fichiers</h2>
+                  <div className="empty-state">
+                    <FileText size={80} />
+                    <h3>Aucun fichier</h3>
+                    <p>Les fichiers partagés avec vous apparaîtront ici</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Section Profil */}
             {activeTab === 'profile' && (
@@ -887,8 +608,12 @@ const loadFavorites = async () => {
                       <span>{user?.email}</span>
                     </div>
                     <div className="info-row">
-                      <label>Rôle</label>
-                      <span className="badge-inline">{user?.role}</span>
+                      <label>Téléphone</label>
+                      <span>{user?.phone || 'Non renseigné'}</span>
+                    </div>
+                    <div className="info-row">
+                      <label>Entreprise</label>
+                      <span>{user?.company_name || 'Non renseigné'}</span>
                     </div>
                     <div className="info-row">
                       <label>Membre depuis</label>
@@ -907,13 +632,11 @@ const loadFavorites = async () => {
               <div className="content-section">
                 <div className="section-card">
                   <h2>Paramètres du Compte</h2>
-                  <p className="empty-state">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="3"/>
-                      <path d="M12 1v6m0 6v6m6-12h-6m6 6h-6m-6-6h6m-6 6h6"/>
-                    </svg>
-                    Fonctionnalité en cours de développement
-                  </p>
+                  <div className="empty-state">
+                    <Settings size={80} />
+                    <h3>Fonctionnalité en cours de développement</h3>
+                    <p>Les paramètres seront bientôt disponibles</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -923,52 +646,10 @@ const loadFavorites = async () => {
 
       <Footer settings={settings} />
 
-      <style>{`
-
-        .btn-delete {
-    padding: 10px 18px;
-    background: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s;
-  }
-
-  .btn-delete:hover:not(:disabled) {
-    background: #dc2626;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-  }
-
-  .btn-delete:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-
-
-
+      <style jsx>{`
         .dashboard-page {
           min-height: 100vh;
-          background: linear-gradient(135deg, #DC2626, #EA580C, #DB2777);
+          background: #0A0E27;
           padding-top: 80px;
           position: relative;
           overflow-x: hidden;
@@ -992,7 +673,7 @@ const loadFavorites = async () => {
         .orb-1 {
           width: 600px;
           height: 600px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
           top: -300px;
           right: -300px;
         }
@@ -1000,7 +681,7 @@ const loadFavorites = async () => {
         .orb-2 {
           width: 500px;
           height: 500px;
-          background: linear-gradient(135deg, #f093fb, #f5576c);
+          background: linear-gradient(135deg, #FF6B35, #764ba2);
           bottom: -250px;
           left: -250px;
           animation-delay: 10s;
@@ -1031,7 +712,7 @@ const loadFavorites = async () => {
         }
 
         .dashboard-sidebar {
-          background: #1E3A5F;
+          background: rgba(255, 255, 255, 0.05);
           backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 20px;
@@ -1052,7 +733,7 @@ const loadFavorites = async () => {
           width: 80px;
           height: 80px;
           margin: 0 auto 15px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -1060,7 +741,7 @@ const loadFavorites = async () => {
           font-size: 2em;
           font-weight: 700;
           color: white;
-          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+          box-shadow: 0 10px 30px rgba(0, 102, 255, 0.4);
         }
 
         .user-avatar img {
@@ -1085,8 +766,8 @@ const loadFavorites = async () => {
         .user-badge {
           display: inline-block;
           padding: 5px 15px;
-          background: rgba(102, 126, 234, 0.2);
-          color: #667eea;
+          background: rgba(0, 102, 255, 0.2);
+          color: #00D9FF;
           border-radius: 20px;
           font-size: 0.85em;
           font-weight: 600;
@@ -1113,13 +794,6 @@ const loadFavorites = async () => {
           transition: all 0.3s ease;
           width: 100%;
           text-align: left;
-          position: relative;
-        }
-
-        .nav-item svg {
-          width: 20px;
-          height: 20px;
-          flex-shrink: 0;
         }
 
         .nav-item:hover {
@@ -1128,22 +802,22 @@ const loadFavorites = async () => {
         }
 
         .nav-item.active {
-          background: rgba(102, 126, 234, 0.2);
-          color: #667eea;
+          background: rgba(0, 102, 255, 0.2);
+          color: #00D9FF;
         }
 
         .nav-item.logout {
-          color: #ef4444;
+          color: #FF6B35;
           margin-top: 10px;
         }
 
         .nav-item.logout:hover {
-          background: rgba(239, 68, 68, 0.1);
+          background: rgba(255, 107, 53, 0.1);
         }
 
         .badge {
           margin-left: auto;
-          background: #ef4444;
+          background: #FF6B35;
           color: white;
           padding: 2px 8px;
           border-radius: 10px;
@@ -1186,24 +860,19 @@ const loadFavorites = async () => {
           align-items: center;
           gap: 10px;
           padding: 14px 28px;
-          background: #1E3A5F;
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
           color: white;
           border: none;
           border-radius: 12px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.3s ease;
-          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+          box-shadow: 0 10px 30px rgba(0, 102, 255, 0.4);
         }
 
         .btn-primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
-        }
-
-        .btn-primary svg {
-          width: 20px;
-          height: 20px;
+          box-shadow: 0 15px 40px rgba(0, 102, 255, 0.6);
         }
 
         .btn-secondary {
@@ -1233,7 +902,7 @@ const loadFavorites = async () => {
         }
 
         .section-card {
-          background: #1E3A5F;
+          background: rgba(255, 255, 255, 0.05);
           backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 20px;
@@ -1244,6 +913,79 @@ const loadFavorites = async () => {
           color: white;
           font-size: 1.5em;
           margin-bottom: 20px;
+        }
+
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+
+        .stat-card {
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          padding: 25px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-icon {
+          width: 60px;
+          height: 60px;
+          border-radius: 15px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .stat-content h3 {
+          color: white;
+          font-size: 2em;
+          font-weight: 800;
+          margin-bottom: 5px;
+        }
+
+        .stat-content p {
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.95em;
+        }
+
+        .quick-actions {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+        }
+
+        .action-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          padding: 25px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          border-radius: 15px;
+          color: white;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: #0066FF;
+          transform: translateY(-3px);
         }
 
         .reservations-grid {
@@ -1294,9 +1036,9 @@ const loadFavorites = async () => {
           justify-content: center;
           width: 70px;
           height: 70px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
           border-radius: 15px;
-          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+          box-shadow: 0 8px 25px rgba(0, 102, 255, 0.4);
         }
 
         .date-day {
@@ -1321,14 +1063,8 @@ const loadFavorites = async () => {
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-        }
-
-        .status-badge-mini {
-          padding: 4px 12px;
-          border-radius: 12px;
-          font-size: 0.75em;
-          font-weight: 700;
-          text-transform: uppercase;
+          display: flex;
+          align-items: center;
         }
 
         .reservation-body {
@@ -1353,9 +1089,7 @@ const loadFavorites = async () => {
         }
 
         .reservation-detail svg {
-          width: 20px;
-          height: 20px;
-          color: #667eea;
+          color: #00D9FF;
           flex-shrink: 0;
           margin-top: 2px;
         }
@@ -1378,15 +1112,19 @@ const loadFavorites = async () => {
         .reservation-actions {
           padding-top: 15px;
           border-top: 1px solid rgba(255, 255, 255, 0.1);
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
         }
 
         .btn-cancel-reservation {
-          width: 100%;
+          flex: 1;
+          min-width: 150px;
           padding: 12px;
-          background: rgba(239, 68, 68, 0.15);
-          border: 2px solid rgba(239, 68, 68, 0.3);
+          background: rgba(255, 107, 53, 0.15);
+          border: 2px solid rgba(255, 107, 53, 0.3);
           border-radius: 12px;
-          color: #ef4444;
+          color: #FF6B35;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.3s ease;
@@ -1397,8 +1135,8 @@ const loadFavorites = async () => {
         }
 
         .btn-cancel-reservation:hover:not(:disabled) {
-          background: rgba(239, 68, 68, 0.25);
-          border-color: #ef4444;
+          background: rgba(255, 107, 53, 0.25);
+          border-color: #FF6B35;
           transform: translateY(-2px);
         }
 
@@ -1407,18 +1145,51 @@ const loadFavorites = async () => {
           cursor: not-allowed;
         }
 
-        .btn-cancel-reservation svg {
-          width: 18px;
-          height: 18px;
+        .btn-delete {
+          padding: 12px 18px;
+          background: rgba(239, 68, 68, 0.15);
+          color: #ef4444;
+          border: 2px solid rgba(239, 68, 68, 0.3);
+          border-radius: 10px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.3s;
+        }
+
+        .btn-delete:hover:not(:disabled) {
+          background: rgba(239, 68, 68, 0.25);
+          border-color: #ef4444;
+          transform: translateY(-2px);
+        }
+
+        .btn-delete:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
         }
 
         .spinner-small {
           width: 16px;
           height: 16px;
-          border: 2px solid rgba(239, 68, 68, 0.3);
-          border-top-color: #ef4444;
+          border: 2px solid rgba(255, 107, 53, 0.3);
+          border-top-color: #FF6B35;
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
 
         .btn-refresh {
@@ -1437,7 +1208,7 @@ const loadFavorites = async () => {
 
         .btn-refresh:hover:not(:disabled) {
           background: rgba(255, 255, 255, 0.1);
-          border-color: #667eea;
+          border-color: #0066FF;
         }
 
         .btn-refresh:disabled {
@@ -1445,164 +1216,38 @@ const loadFavorites = async () => {
           cursor: not-allowed;
         }
 
-        .view-all-btn {
-          background: transparent;
-          border: none;
-          color: #667eea;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .view-all-btn:hover {
-          color: #764ba2;
-          transform: translateX(5px);
-        }
-
-        .empty-state-text {
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 60px 20px;
+          color: rgba(255, 255, 255, 0.6);
           text-align: center;
-          color: rgba(255, 255, 255, 0.5);
-          font-style: italic;
-          padding: 20px;
         }
 
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 20px;
-          margin-bottom: 30px;
+        .empty-state svg {
+          stroke: rgba(255, 255, 255, 0.3);
+          margin-bottom: 20px;
         }
 
-        .stat-card {
-          background: #1E3A5F;
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 20px;
-          padding: 25px;
-          display: flex;
-          align-items: center;
-          gap: 20px;
-          transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .stat-icon {
-          width: 60px;
-          height: 60px;
-          border-radius: 15px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .stat-icon svg {
-          width: 28px;
-          height: 28px;
-          stroke: white;
-        }
-
-        .stat-content h3 {
+        .empty-state h3 {
           color: white;
-          font-size: 2em;
-          font-weight: 800;
-          margin-bottom: 5px;
+          font-size: 1.5em;
+          margin-bottom: 10px;
         }
 
-        .stat-content p {
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 0.95em;
+        .empty-state p {
+          margin-bottom: 0;
         }
 
-        .quick-actions {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 15px;
-        }
-
-        .action-btn {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px;
-          padding: 25px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 2px solid rgba(255, 255, 255, 0.1);
-          border-radius: 15px;
-          color: white;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .action-btn:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: #667eea;
-          transform: translateY(-3px);
-        }
-
-        .action-btn svg {
-          width: 32px;
-          height: 32px;
-          stroke: #667eea;
-        }
-
-        .activity-list {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-        }
-
-        .activity-item {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          padding: 20px;
-          background: rgba(255, 255, 255, 0.03);
-          border-radius: 15px;
-          transition: all 0.3s ease;
-        }
-
-        .activity-item:hover {
-          background: rgba(255, 255, 255, 0.06);
-        }
-
-        .activity-icon {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .activity-icon.success {
-          background: rgba(16, 185, 129, 0.2);
-        }
-
-        .activity-icon svg {
-          width: 20px;
-          height: 20px;
-          stroke: white;
-        }
-
-        .activity-content {
-          flex: 1;
-        }
-
-        .activity-content p {
-          color: white;
-          margin-bottom: 5px;
-        }
-
-        .activity-content span {
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 0.9em;
+        .loading-spinner {
+          width: 50px;
+          height: 50px;
+          border: 4px solid rgba(255, 255, 255, 0.1);
+          border-top-color: #0066FF;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
         }
 
         .profile-info {
@@ -1633,262 +1278,6 @@ const loadFavorites = async () => {
           font-weight: 500;
         }
 
-        .badge-inline {
-          padding: 5px 15px;
-          background: rgba(102, 126, 234, 0.2);
-          color: #667eea;
-          border-radius: 20px;
-          font-size: 0.9em;
-          font-weight: 600;
-        }
-
-        .empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 60px 20px;
-          color: rgba(255, 255, 255, 0.6);
-          text-align: center;
-        }
-
-        .empty-state svg {
-          width: 80px;
-          height: 80px;
-          stroke: rgba(255, 255, 255, 0.3);
-          margin-bottom: 20px;
-        }
-
-        .empty-state h3 {
-          color: white;
-          font-size: 1.5em;
-          margin-bottom: 10px;
-        }
-
-        .empty-state p {
-          margin-bottom: 0;
-        }
-
-        .loading-spinner {
-          width: 50px;
-          height: 50px;
-          border: 4px solid rgba(255, 255, 255, 0.1);
-          border-top-color: #667eea;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
-
-        .favorites-grid-dashboard {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 25px;
-        }
-
-        .favorite-card-dashboard {
-          background: rgba(255, 255, 255, 0.05);
-          border: 2px solid rgba(255, 255, 255, 0.1);
-          border-radius: 20px;
-          overflow: hidden;
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          animation: slideIn 0.5s ease;
-        }
-
-        .favorite-card-dashboard:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .favorite-image {
-          position: relative;
-          width: 100%;
-          height: 220px;
-          overflow: hidden;
-        }
-
-        .favorite-image img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          transition: transform 0.4s ease;
-        }
-
-        .favorite-card-dashboard:hover .favorite-image img {
-          transform: scale(1.1);
-        }
-
-        .placeholder-image {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          font-size: 4em;
-        }
-
-        .remove-favorite-btn {
-          position: absolute;
-          top: 15px;
-          right: 15px;
-          width: 40px;
-          height: 40px;
-          background: rgba(239, 68, 68, 0.9);
-          border: none;
-          border-radius: 50%;
-          color: white;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.3s ease;
-          z-index: 2;
-          opacity: 0;
-        }
-
-        .favorite-card-dashboard:hover .remove-favorite-btn {
-          opacity: 1;
-        }
-
-        .remove-favorite-btn:hover:not(:disabled) {
-          background: #dc2626;
-          transform: scale(1.1);
-        }
-
-        .remove-favorite-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .remove-favorite-btn.removing {
-          opacity: 1;
-        }
-
-        .spinner-tiny {
-          width: 18px;
-          height: 18px;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-top-color: white;
-          border-radius: 50%;
-          animation: spin 0.6s linear infinite;
-        }
-
-        .dietary-badges-overlay {
-          position: absolute;
-          bottom: 10px;
-          left: 10px;
-          display: flex;
-          gap: 8px;
-          z-index: 1;
-        }
-
-        .dietary-badge {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 16px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .favorite-content {
-          padding: 20px;
-        }
-
-        .favorite-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 12px;
-        }
-
-        .category-tag {
-          padding: 6px 12px;
-          background: rgba(102, 126, 234, 0.2);
-          color: #667eea;
-          border-radius: 20px;
-          font-size: 0.8em;
-          font-weight: 600;
-        }
-
-        .course-type {
-          padding: 4px 10px;
-          background: rgba(255, 255, 255, 0.1);
-          color: rgba(255, 255, 255, 0.7);
-          border-radius: 12px;
-          font-size: 0.75em;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .favorite-name {
-          color: white;
-          font-size: 1.3em;
-          font-weight: 700;
-          margin-bottom: 10px;
-        }
-
-        .favorite-description {
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 0.9em;
-          line-height: 1.6;
-          margin-bottom: 15px;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .favorite-meta {
-          display: flex;
-          gap: 12px;
-          margin-bottom: 12px;
-        }
-
-        .meta-tag {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 10px;
-          color: rgba(255, 255, 255, 0.8);
-          font-size: 0.85em;
-        }
-
-        .allergens-tag {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px;
-          background: rgba(245, 158, 11, 0.15);
-          border: 1px solid rgba(245, 158, 11, 0.3);
-          border-radius: 10px;
-          color: #f59e0b;
-          font-size: 0.85em;
-          margin-bottom: 12px;
-        }
-
-        .favorite-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding-top: 15px;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .price-display {
-          color: #10b981;
-          font-size: 1.5em;
-          font-weight: 800;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
         @media (max-width: 1024px) {
           .dashboard-container {
             grid-template-columns: 1fr;
@@ -1903,10 +1292,6 @@ const loadFavorites = async () => {
           .reservations-grid {
             grid-template-columns: 1fr;
           }
-
-          .favorites-grid-dashboard {
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          }
         }
 
         @media (max-width: 768px) {
@@ -1915,29 +1300,24 @@ const loadFavorites = async () => {
           }
 
           .main-header {
-            flex
-            08:32-direction: column;
+            flex-direction: column;
             align-items: flex-start;
-            }
+          }
 
-      .btn-primary {
-        width: 100%;
-        justify-content: center;
-      }
+          .btn-primary {
+            width: 100%;
+            justify-content: center;
+          }
 
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
 
-      .quick-actions {
-        grid-template-columns: 1fr;
-      }
-
-      .favorites-grid-dashboard {
-        grid-template-columns: 1fr;
-      }
-    }
-  `}</style>
-</>
-);
+          .quick-actions {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </>
+  );
 }

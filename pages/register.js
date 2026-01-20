@@ -155,7 +155,7 @@ export default function Register() {
   return (
     <>
       <Head>
-        <title>Inscription - {settings.site_name || 'Restaurant'}</title>
+        <title>Inscription - {settings.site_name || 'LE SAGE'}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </Head>
 
@@ -429,35 +429,35 @@ export default function Register() {
           <div className="benefits-panel">
             <div className="benefits-content">
               <div className="benefits-icon">
-                🍽️
+                💻
               </div>
               <h2>Pourquoi nous rejoindre ?</h2>
               <ul className="benefits-list">
                 <li>
                   <span className="benefit-icon">⚡</span>
-                  <span>Réservation instantanée</span>
+                  <span>Projets sur-mesure</span>
                 </li>
                 <li>
-                  <span className="benefit-icon">🎁</span>
-                  <span>Offres exclusives membres</span>
+                  <span className="benefit-icon">🎯</span>
+                  <span>Suivi personnalisé</span>
                 </li>
                 <li>
-                  <span className="benefit-icon">⭐</span>
-                  <span>Programme de fidélité</span>
+                  <span className="benefit-icon">🚀</span>
+                  <span>Technologies modernes</span>
                 </li>
                 <li>
-                  <span className="benefit-icon">🎉</span>
-                  <span>Événements prioritaires</span>
+                  <span className="benefit-icon">💼</span>
+                  <span>Support professionnel</span>
                 </li>
               </ul>
               <div className="stats">
                 <div className="stat-item">
-                  <div className="stat-value">10K+</div>
-                  <div className="stat-label">Membres</div>
+                  <div className="stat-value">100+</div>
+                  <div className="stat-label">Projets</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-value">4.9★</div>
-                  <div className="stat-label">Note</div>
+                  <div className="stat-value">98%</div>
+                  <div className="stat-label">Satisfaction</div>
                 </div>
               </div>
             </div>

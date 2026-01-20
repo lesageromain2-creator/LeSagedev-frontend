@@ -6,7 +6,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 // GESTION DU TOKEN JWT
 // ============================================
 
-const TOKEN_KEY = 'auth_token';
+// Clé unique pour le token JWT dans le localStorage
+// Doit être cohérente avec le reste du front (Header, dashboard, etc.)
+const TOKEN_KEY = 'authToken';
 
 const getToken = () => {
   if (typeof window === 'undefined') return null;
@@ -394,7 +396,10 @@ export const deleteReservation = async (id) => {
 
 export const fetchFavorites = async () => {
   const response = await fetchAPI('/favorites');
-  return response;
+  // ✅ S'assurer que le format retourné est toujours cohérent
+  return {
+    favorites: Array.isArray(response) ? response : (response.favorites || [])
+  };
 };
 
 export const addFavorite = async (dishId) => {

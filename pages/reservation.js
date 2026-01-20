@@ -1,10 +1,11 @@
-// frontend/pages/reservation.js
+// frontend/pages/reservation.js - Page Réservation LE SAGE
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { fetchSettings, createReservation, checkAuth } from '../utils/api';
+import { Calendar, Video, MapPin, Clock, CheckCircle, Sparkles, Zap, Target, Gift } from 'lucide-react';
 
 export default function Reservation() {
   const router = useRouter();
@@ -13,8 +14,10 @@ export default function Reservation() {
   const [formData, setFormData] = useState({
     reservation_date: '',
     reservation_time: '',
-    number_of_people: 2,
-    special_requests: ''
+    meeting_type: 'visio',
+    project_type: '',
+    estimated_budget: '',
+    message: ''
   });
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -68,9 +71,9 @@ export default function Reservation() {
     if (!formData.reservation_time) {
       newErrors.push('L\'heure est requise');
     }
-    
-    if (formData.number_of_people < 1 || formData.number_of_people > 20) {
-      newErrors.push('Le nombre de personnes doit être entre 1 et 20');
+
+    if (!formData.project_type) {
+      newErrors.push('Le type de projet est requis');
     }
 
     const reservationDateTime = new Date(`${formData.reservation_date}T${formData.reservation_time}`);
@@ -81,16 +84,11 @@ export default function Reservation() {
     const [hour, minute] = formData.reservation_time.split(':').map(Number);
     const timeInMinutes = hour * 60 + minute;
     
-    const lunchStart = 12 * 60;
-    const lunchEnd = 14 * 60 + 30;
-    const dinnerStart = 19 * 60;
-    const dinnerEnd = 22 * 60 + 30;
+    const workStart = 9 * 60; // 9h00
+    const workEnd = 18 * 60; // 18h00
 
-    const isLunchTime = timeInMinutes >= lunchStart && timeInMinutes <= lunchEnd;
-    const isDinnerTime = timeInMinutes >= dinnerStart && timeInMinutes <= dinnerEnd;
-
-    if (!isLunchTime && !isDinnerTime) {
-      newErrors.push('Horaires disponibles : 12h00-14h30 et 19h00-22h30');
+    if (timeInMinutes < workStart || timeInMinutes > workEnd) {
+      newErrors.push('Horaires disponibles : 9h00-18h00');
     }
 
     return newErrors;
@@ -135,60 +133,62 @@ export default function Reservation() {
     }
   };
 
-  // Time slots pour une meilleure UX
-  const timeSlots = {
-    lunch: ['12:00', '12:30', '13:00', '13:30', '14:00'],
-    dinner: ['19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00']
-  };
+  // Créneaux horaires pour heures de bureau
+  const timeSlots = [
+    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
+    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
+  ];
 
   if (success) {
     return (
       <>
         <Head>
-          <title>Réservation confirmée - {settings.site_name}</title>
+          <title>Rendez-vous confirmé - {settings.site_name || 'LE SAGE'}</title>
         </Head>
 
         <Header settings={settings} />
 
         <div className="success-page">
+          <div className="bg-effects">
+            <div className="gradient-orb orb-1"></div>
+            <div className="gradient-orb orb-2"></div>
+          </div>
           <div className="success-container">
             <div className="success-animation">
               <div className="check-circle">
-                <svg viewBox="0 0 52 52">
-                  <circle cx="26" cy="26" r="25" fill="none"/>
-                  <path fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                </svg>
+                <CheckCircle size={120} />
               </div>
             </div>
             
-            <h1>Réservation confirmée !</h1>
-            <p className="success-subtitle">Merci pour votre confiance</p>
+            <h1>Rendez-vous confirmé !</h1>
+            <p className="success-subtitle">Nous avons hâte de discuter de votre projet</p>
             
             <div className="reservation-card">
               <div className="card-header">
-                <span className="card-icon">🍽️</span>
-                <h3>Détails de votre réservation</h3>
+                <Calendar size={32} />
+                <h3>Détails de votre rendez-vous</h3>
               </div>
               <div className="card-body">
                 <div className="detail-row">
-                  <span className="detail-icon">📅</span>
+                  <Calendar size={24} />
                   <div className="detail-content">
                     <strong>Date</strong>
                     <p>{new Date(formData.reservation_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                   </div>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-icon">🕐</span>
+                  <Clock size={24} />
                   <div className="detail-content">
                     <strong>Heure</strong>
                     <p>{formData.reservation_time}</p>
                   </div>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-icon">👥</span>
+                  {formData.meeting_type === 'visio' ? <Video size={24} /> : <MapPin size={24} />}
                   <div className="detail-content">
-                    <strong>Convives</strong>
-                    <p>{formData.number_of_people} {formData.number_of_people > 1 ? 'personnes' : 'personne'}</p>
+                    <strong>Type</strong>
+                    <p>{formData.meeting_type === 'visio' ? 'Visioconférence' : 'Présentiel'}</p>
                   </div>
                 </div>
               </div>
@@ -198,7 +198,7 @@ export default function Reservation() {
               className="btn-primary"
               onClick={() => router.push('/dashboard')}
             >
-              Voir mes réservations
+              Voir mes rendez-vous
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
@@ -210,34 +210,64 @@ export default function Reservation() {
 
         <style jsx>{`
           .success-page {
-            min-height: 80vh;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 60px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0A0E27;
             position: relative;
             overflow: hidden;
           }
 
-          .success-page::before {
-            content: '';
+          .bg-effects {
             position: absolute;
             inset: 0;
-            background-image: 
-              radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
-              radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+            pointer-events: none;
+          }
+
+          .gradient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.3;
+            animation: float 20s ease-in-out infinite;
+          }
+
+          .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: linear-gradient(135deg, #0066FF, #00D9FF);
+            top: -300px;
+            right: -300px;
+          }
+
+          .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, #FF6B35, #764ba2);
+            bottom: -250px;
+            left: -250px;
+            animation-delay: 10s;
+          }
+
+          @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, 50px) scale(1.1); }
           }
 
           .success-container {
-            background: white;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 60px 40px;
             border-radius: 32px;
             max-width: 600px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 30px 90px rgba(0,0,0,0.3);
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
             position: relative;
+            z-index: 1;
             animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
 
@@ -257,45 +287,19 @@ export default function Reservation() {
           }
 
           .check-circle {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto;
-            position: relative;
+            color: #10b981;
+            animation: scaleIn 0.5s ease;
           }
 
-          .check-circle svg {
-            width: 100%;
-            height: 100%;
-          }
-
-          .check-circle circle {
-            stroke: #10b981;
-            stroke-width: 3;
-            stroke-dasharray: 166;
-            stroke-dashoffset: 166;
-            animation: drawCircle 0.6s ease forwards;
-          }
-
-          .check-circle path {
-            stroke: #10b981;
-            stroke-width: 4;
-            stroke-dasharray: 48;
-            stroke-dashoffset: 48;
-            animation: drawCheck 0.3s 0.6s ease forwards;
-          }
-
-          @keyframes drawCircle {
-            to { stroke-dashoffset: 0; }
-          }
-
-          @keyframes drawCheck {
-            to { stroke-dashoffset: 0; }
+          @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
           }
 
           .success-container h1 {
             font-size: 3em;
             font-weight: 900;
-            background: linear-gradient(135deg, #DC2626, #EA580C);
+            background: linear-gradient(135deg, #0066FF, #00D9FF);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 15px;
@@ -303,16 +307,16 @@ export default function Reservation() {
 
           .success-subtitle {
             font-size: 1.3em;
-            color: #64748b;
+            color: rgba(255, 255, 255, 0.7);
             margin-bottom: 40px;
           }
 
           .reservation-card {
-            background: #f8fafc;
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 24px;
             padding: 30px;
             margin-bottom: 35px;
-            border: 2px solid #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
           }
 
           .card-header {
@@ -321,16 +325,13 @@ export default function Reservation() {
             justify-content: center;
             gap: 12px;
             margin-bottom: 25px;
-          }
-
-          .card-icon {
-            font-size: 2.5em;
+            color: #00D9FF;
           }
 
           .card-header h3 {
             font-size: 1.5em;
             font-weight: 800;
-            color: #1e293b;
+            color: white;
             margin: 0;
           }
 
@@ -345,33 +346,22 @@ export default function Reservation() {
             align-items: center;
             gap: 20px;
             padding: 20px;
-            background: white;
+            background: rgba(255, 255, 255, 0.03);
             border-radius: 16px;
             text-align: left;
             transition: all 0.3s;
+            color: #00D9FF;
           }
 
           .detail-row:hover {
             transform: translateX(5px);
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
-          }
-
-          .detail-icon {
-            font-size: 2.5em;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #DC2626, #EA580C);
-            border-radius: 16px;
-            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.06);
           }
 
           .detail-content strong {
             display: block;
             font-size: 0.9em;
-            color: #64748b;
+            color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 5px;
@@ -380,14 +370,14 @@ export default function Reservation() {
           .detail-content p {
             font-size: 1.2em;
             font-weight: 700;
-            color: #1e293b;
+            color: white;
             margin: 0;
           }
 
           .btn-primary {
             width: 100%;
             padding: 20px;
-            background: linear-gradient(135deg, #DC2626, #EA580C);
+            background: linear-gradient(135deg, #0066FF, #00D9FF);
             color: white;
             border: none;
             border-radius: 16px;
@@ -399,12 +389,12 @@ export default function Reservation() {
             justify-content: center;
             gap: 12px;
             transition: all 0.3s;
-            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 102, 255, 0.4);
           }
 
           .btn-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(220, 38, 38, 0.4);
+            box-shadow: 0 15px 40px rgba(0, 102, 255, 0.6);
           }
 
           @media (max-width: 768px) {
@@ -415,11 +405,6 @@ export default function Reservation() {
             .success-container h1 {
               font-size: 2.2em;
             }
-
-            .check-circle {
-              width: 100px;
-              height: 100px;
-            }
           }
         `}</style>
       </>
@@ -429,25 +414,27 @@ export default function Reservation() {
   return (
     <>
       <Head>
-        <title>Réserver une table - {settings.site_name || 'Restaurant'}</title>
+        <title>Prendre rendez-vous - {settings.site_name || 'LE SAGE'}</title>
+        <meta name="description" content="Réservez une consultation gratuite pour discuter de votre projet web" />
       </Head>
 
       <Header settings={settings} />
 
       <div className="reservation-page">
-        {/* Hero moderne avec décorations */}
-        <section className="hero">
-          <div className="hero-bg">
-            <div className="decoration-utensils">
-              <span className="utensil fork">🍴</span>
-              <span className="utensil knife">🔪</span>
-              <span className="utensil spoon">🥄</span>
+        <div className="bg-effects">
+          <div className="gradient-orb orb-1"></div>
+          <div className="gradient-orb orb-2"></div>
+        </div>
+
+        {/* Hero Section */}
+        <section className={`hero ${mounted ? 'mounted' : ''}`}>
+          <div className="hero-content">
+            <div className="hero-badge">
+              <Gift size={20} />
+              <span>Consultation gratuite</span>
             </div>
-          </div>
-          <div className={`hero-content ${mounted ? 'mounted' : ''}`}>
-            
-            <h1>Réservez votre table</h1>
-            <p>Une expérience gastronomique qui vous attend</p>
+            <h1>Discutons de votre projet web</h1>
+            <p>Une solution sur-mesure, entièrement customizable et adaptée à vos besoins</p>
           </div>
         </section>
 
@@ -455,31 +442,63 @@ export default function Reservation() {
           <div className={`main-grid ${mounted ? 'mounted' : ''}`}>
             {/* Sidebar informative */}
             <aside className="sidebar">
+              <div className="info-card highlight">
+                <div className="info-header">
+                  <Sparkles size={32} className="info-icon" />
+                  <h3>Pourquoi nous choisir ?</h3>
+                </div>
+                <div className="info-body">
+                  <ul className="benefits-list">
+                    <li>
+                      <Zap size={20} className="check" />
+                      <div>
+                        <strong>100% Customizable</strong>
+                        <p>Chaque projet est unique et adapté à vos besoins</p>
+                      </div>
+                    </li>
+                    <li>
+                      <Gift size={20} className="check" />
+                      <div>
+                        <strong>Consultation gratuite</strong>
+                        <p>Premier rendez-vous offert pour évaluer votre projet</p>
+                      </div>
+                    </li>
+                    <li>
+                      <Target size={20} className="check" />
+                      <div>
+                        <strong>Adaptabilité totale</strong>
+                        <p>Votre projet évolue avec vous, sans limite</p>
+                      </div>
+                    </li>
+                    <li>
+                      <CheckCircle size={20} className="check" />
+                      <div>
+                        <strong>Accompagnement complet</strong>
+                        <p>De la conception à la mise en ligne</p>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
               <div className="info-card">
                 <div className="info-header">
-                  <span className="info-icon">🕐</span>
+                  <Clock size={32} className="info-icon" />
                   <h3>Horaires</h3>
                 </div>
                 <div className="info-body">
                   <div className="time-slot">
-                    <span className="slot-emoji">☀️</span>
+                    <span className="slot-emoji">💼</span>
                     <div>
-                      <strong>Déjeuner</strong>
-                      <p>12:00 - 14:30</p>
-                    </div>
-                  </div>
-                  <div className="time-slot">
-                    <span className="slot-emoji">🌙</span>
-                    <div>
-                      <strong>Dîner</strong>
-                      <p>19:00 - 22:30</p>
+                      <strong>Lundi - Vendredi</strong>
+                      <p>9h00 - 18h00</p>
                     </div>
                   </div>
                   <div className="time-slot closed">
                     <span className="slot-emoji">🚫</span>
                     <div>
-                      <strong>Dimanche</strong>
-                      <p>Fermé</p>
+                      <strong>Week-end</strong>
+                      <p>Sur demande</p>
                     </div>
                   </div>
                 </div>
@@ -487,55 +506,26 @@ export default function Reservation() {
 
               <div className="info-card">
                 <div className="info-header">
-                  <span className="info-icon">📞</span>
-                  <h3>Contact</h3>
+                  <Video size={32} className="info-icon" />
+                  <h3>Type de réunion</h3>
                 </div>
                 <div className="info-body">
-                  {settings.site_phone && (
-                    <a href={`tel:${settings.site_phone}`} className="contact-link">
-                      <span className="contact-icon">📱</span>
+                  <div className="meeting-type-info">
+                    <div className="meeting-option">
+                      <Video size={24} />
                       <div>
-                        <strong>Téléphone</strong>
-                        <p>{settings.site_phone}</p>
+                        <strong>Visioconférence</strong>
+                        <p>Rapide et flexible</p>
                       </div>
-                    </a>
-                  )}
-                  {settings.site_email && (
-                    <a href={`mailto:${settings.site_email}`} className="contact-link">
-                      <span className="contact-icon">✉️</span>
+                    </div>
+                    <div className="meeting-option">
+                      <MapPin size={24} />
                       <div>
-                        <strong>Email</strong>
-                        <p>{settings.site_email}</p>
+                        <strong>Présentiel</strong>
+                        <p>À Lyon ou en déplacement</p>
                       </div>
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              <div className="info-card highlight">
-                <div className="info-header">
-                  <span className="info-icon">⭐</span>
-                  <h3>Avantages</h3>
-                </div>
-                <div className="info-body">
-                  <ul className="benefits-list">
-                    <li>
-                      <span className="check">✓</span>
-                      Confirmation immédiate
-                    </li>
-                    <li>
-                      <span className="check">✓</span>
-                      Annulation gratuite 2h avant
-                    </li>
-                    <li>
-                      <span className="check">✓</span>
-                      Tables jusqu'à 20 personnes
-                    </li>
-                    <li>
-                      <span className="check">✓</span>
-                      Service personnalisé
-                    </li>
-                  </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             </aside>
@@ -544,13 +534,8 @@ export default function Reservation() {
             <main className="form-section">
               <div className={`form-container ${shake ? 'shake' : ''}`}>
                 <div className="form-header">
-                  <div className="header-decoration">
-                    <span className="deco-element">🍷</span>
-                    <span className="deco-element">🥖</span>
-                    <span className="deco-element">🧀</span>
-                  </div>
-                  <h2>Réservation</h2>
-                  <p>Complétez les informations ci-dessous</p>
+                  <h2>Prendre rendez-vous</h2>
+                  <p>Remplissez le formulaire pour réserver votre consultation gratuite</p>
                 </div>
 
                 {!user && (
@@ -563,7 +548,7 @@ export default function Reservation() {
                     <div>
                       <strong>Connexion requise</strong>
                       <p>
-                        <a href="/login?redirect=/reservation">Connectez-vous</a> pour réserver une table
+                        <a href="/login?redirect=/reservation">Connectez-vous</a> pour prendre rendez-vous
                       </p>
                     </div>
                   </div>
@@ -591,8 +576,8 @@ export default function Reservation() {
                   {/* Date Selection */}
                   <div className="form-group">
                     <label>
-                      <span className="label-icon">📅</span>
-                      Date de réservation
+                      <Calendar size={20} className="label-icon" />
+                      Date du rendez-vous
                       <span className="required">*</span>
                     </label>
                     <div className="input-enhanced">
@@ -608,115 +593,129 @@ export default function Reservation() {
                     </div>
                   </div>
 
-                  {/* Time Selection avec boutons */}
+                  {/* Time Selection */}
                   <div className="form-group">
                     <label>
-                      <span className="label-icon">🕐</span>
-                      Heure d'arrivée
+                      <Clock size={20} className="label-icon" />
+                      Heure du rendez-vous
                       <span className="required">*</span>
                     </label>
                     <div className="time-selector">
-                      <div className="service-section">
-                        <div className="service-label">☀️ Déjeuner</div>
-                        <div className="time-buttons">
-                          {timeSlots.lunch.map(time => (
-                            <button
-                              key={time}
-                              type="button"
-                              className={`time-btn ${formData.reservation_time === time ? 'active' : ''}`}
-                              onClick={() => setFormData({...formData, reservation_time: time})}
-                              disabled={loading || !user}
-                            >
-                              {time}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="service-section">
-                        <div className="service-label">🌙 Dîner</div>
-                        <div className="time-buttons">
-                          {timeSlots.dinner.map(time => (
-                            <button
-                              key={time}
-                              type="button"
-                              className={`time-btn ${formData.reservation_time === time ? 'active' : ''}`}
-                              onClick={() => setFormData({...formData, reservation_time: time})}
-                              disabled={loading || !user}
-                            >
-                              {time}
-                            </button>
-                          ))}
-                        </div>
+                      <div className="time-buttons">
+                        {timeSlots.map(time => (
+                          <button
+                            key={time}
+                            type="button"
+                            className={`time-btn ${formData.reservation_time === time ? 'active' : ''}`}
+                            onClick={() => setFormData({...formData, reservation_time: time})}
+                            disabled={loading || !user}
+                          >
+                            {time}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
 
-                  {/* Nombre de personnes avec slider */}
+                  {/* Type de réunion */}
                   <div className="form-group">
                     <label>
-                      <span className="label-icon">👥</span>
-                      Nombre de convives
+                      <Video size={20} className="label-icon" />
+                      Type de réunion
                       <span className="required">*</span>
                     </label>
-                    <div className="people-selector">
+                    <div className="meeting-type-selector">
                       <button
                         type="button"
-                        className="people-btn"
-                        onClick={() => setFormData({...formData, number_of_people: Math.max(1, formData.number_of_people - 1)})}
-                        disabled={loading || !user || formData.number_of_people <= 1}
+                        className={`meeting-btn ${formData.meeting_type === 'visio' ? 'active' : ''}`}
+                        onClick={() => setFormData({...formData, meeting_type: 'visio'})}
+                        disabled={loading || !user}
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
+                        <Video size={24} />
+                        <span>Visioconférence</span>
+                        <small>Recommandé</small>
                       </button>
-                      
-                      <div className="people-display">
-                        <div className="people-number">{formData.number_of_people}</div>
-                        <div className="people-text">
-                          {formData.number_of_people > 1 ? 'Personnes' : 'Personne'}
-                        </div>
-                        <input
-                          type="range"
-                          name="number_of_people"
-                          value={formData.number_of_people}
-                          onChange={handleChange}
-                          min="1"
-                          max="20"
-                          disabled={loading || !user}
-                          className="people-slider"
-                        />
-                      </div>
-                      
                       <button
                         type="button"
-                        className="people-btn"
-                        onClick={() => setFormData({...formData, number_of_people: Math.min(20, formData.number_of_people + 1)})}
-                        disabled={loading || !user || formData.number_of_people >= 20}
+                        className={`meeting-btn ${formData.meeting_type === 'presentiel' ? 'active' : ''}`}
+                        onClick={() => setFormData({...formData, meeting_type: 'presentiel'})}
+                        disabled={loading || !user}
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <line x1="12" y1="5" x2="12" y2="19"/>
-                          <line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
+                        <MapPin size={24} />
+                        <span>Présentiel</span>
+                        <small>Lyon</small>
                       </button>
                     </div>
                   </div>
 
-                  {/* Demandes spéciales */}
+                  {/* Type de projet */}
+                  <div className="form-group">
+                    <label>
+                      <Target size={20} className="label-icon" />
+                      Type de projet
+                      <span className="required">*</span>
+                    </label>
+                    <div className="input-enhanced">
+                      <select
+                        name="project_type"
+                        value={formData.project_type}
+                        onChange={handleChange}
+                        required
+                        disabled={loading || !user}
+                      >
+                        <option value="">Sélectionnez un type de projet</option>
+                        <option value="vitrine">Site Vitrine</option>
+                        <option value="ecommerce">E-commerce</option>
+                        <option value="webapp">Application Web</option>
+                        <option value="refonte">Refonte & Optimisation</option>
+                        <option value="other">Autre projet</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Budget estimé */}
+                  <div className="form-group">
+                    <label>
+                      <span className="label-icon">💰</span>
+                      Budget estimé
+                    </label>
+                    <div className="input-enhanced">
+                      <select
+                        name="estimated_budget"
+                        value={formData.estimated_budget}
+                        onChange={handleChange}
+                        disabled={loading || !user}
+                      >
+                        <option value="">Sélectionnez une fourchette</option>
+                        <option value="<2000">Moins de 2 000€</option>
+                        <option value="2000-5000">2 000€ - 5 000€</option>
+                        <option value="5000-10000">5 000€ - 10 000€</option>
+                        <option value="10000-20000">10 000€ - 20 000€</option>
+                        <option value=">20000">Plus de 20 000€</option>
+                        <option value="custom">Sur devis</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Message */}
                   <div className="form-group">
                     <label>
                       <span className="label-icon">💬</span>
-                      Demandes spéciales
+                      Décrivez votre projet
                     </label>
                     <div className="input-enhanced">
                       <textarea
-                        name="special_requests"
-                        value={formData.special_requests}
+                        name="message"
+                        value={formData.message}
                         onChange={handleChange}
-                        rows="4"
-                        placeholder="Allergies, régimes spéciaux, occasion particulière..."
+                        rows="5"
+                        placeholder="Parlez-nous de votre projet, vos besoins, vos objectifs..."
                         disabled={loading || !user}
                       ></textarea>
                     </div>
+                    <p className="form-hint">
+                      💡 Plus vous nous en direz, mieux nous pourrons vous conseiller lors de la consultation
+                    </p>
                   </div>
 
                   <button 
@@ -731,13 +730,8 @@ export default function Reservation() {
                       </>
                     ) : (
                       <>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="4" width="18" height="18" rx="2"/>
-                          <line x1="16" y1="2" x2="16" y2="6"/>
-                          <line x1="8" y1="2" x2="8" y2="6"/>
-                          <line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                        Confirmer la réservation
+                        <Calendar size={24} />
+                        Confirmer le rendez-vous
                       </>
                     )}
                   </button>
@@ -753,7 +747,47 @@ export default function Reservation() {
       <style jsx>{`
         .reservation-page {
           min-height: 100vh;
-          background: #fafafa;
+          background: #0A0E27;
+          padding-top: 80px;
+          position: relative;
+          overflow-x: hidden;
+        }
+
+        .bg-effects {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .gradient-orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(120px);
+          opacity: 0.3;
+          animation: float 20s ease-in-out infinite;
+        }
+
+        .orb-1 {
+          width: 600px;
+          height: 600px;
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
+          top: -300px;
+          right: -300px;
+        }
+
+        .orb-2 {
+          width: 500px;
+          height: 500px;
+          background: linear-gradient(135deg, #FF6B35, #764ba2);
+          bottom: -250px;
+          left: -250px;
+          animation-delay: 10s;
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(50px, 50px) scale(1.1); }
         }
 
         /* HERO SECTION */
@@ -764,50 +798,7 @@ export default function Reservation() {
           justify-content: center;
           position: relative;
           overflow: hidden;
-          background: linear-gradient(135deg, #DC2626, #EA580C, #DB2777);
-        }
-
-        .hero-bg {
-          position: absolute;
-          inset: 0;
-        }
-
-        .decoration-utensils {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-        }
-
-        .utensil {
-          position: absolute;
-          font-size: 4em;
-          opacity: 0.1;
-          animation: float 20s ease-in-out infinite;
-        }
-
-        .fork {
-          top: 20%;
-          left: 15%;
-          animation-delay: 0s;
-        }
-
-        .knife {
-          top: 60%;
-          right: 20%;
-          animation-delay: 5s;
-        }
-
-        .spoon {
-          bottom: 25%;
-          left: 60%;
-          animation-delay: 10s;
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(20px, -20px) rotate(5deg); }
-          50% { transform: translate(-20px, 20px) rotate(-5deg); }
-          75% { transform: translate(20px, 20px) rotate(5deg); }
+          padding: 80px 20px;
         }
 
         .hero-content {
@@ -815,7 +806,7 @@ export default function Reservation() {
           z-index: 1;
           text-align: center;
           color: white;
-          padding: 0 20px;
+          max-width: 900px;
           opacity: 0;
           transform: translateY(30px);
           transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
@@ -831,26 +822,14 @@ export default function Reservation() {
           align-items: center;
           gap: 10px;
           padding: 12px 28px;
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.1);
           backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.2);
           border-radius: 50px;
           font-weight: 700;
           margin-bottom: 25px;
           font-size: 0.95em;
-        }
-
-        .badge-dot {
-          width: 10px;
-          height: 10px;
-          background: #10b981;
-          border-radius: 50%;
-          animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(1.3); }
+          color: white;
         }
 
         .hero-content h1 {
@@ -858,11 +837,16 @@ export default function Reservation() {
           font-weight: 900;
           margin-bottom: 20px;
           letter-spacing: -2px;
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
         .hero-content p {
           font-size: 1.5em;
-          opacity: 0.95;
+          color: rgba(255, 255, 255, 0.8);
+          line-height: 1.6;
         }
 
         /* CONTAINER */
@@ -876,7 +860,7 @@ export default function Reservation() {
 
         .main-grid {
           display: grid;
-          grid-template-columns: 360px 1fr;
+          grid-template-columns: 400px 1fr;
           gap: 35px;
           opacity: 0;
           transform: translateY(20px);
@@ -896,23 +880,23 @@ export default function Reservation() {
         }
 
         .info-card {
-          background: white;
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 24px;
           padding: 30px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-          border: 2px solid #f1f3f5;
           transition: all 0.3s;
         }
 
         .info-card:hover {
           transform: translateY(-5px);
-          box-shadow: 0 10px 30px rgba(220, 38, 38, 0.15);
-          border-color: #DC2626;
+          border-color: rgba(0, 102, 255, 0.3);
+          box-shadow: 0 10px 30px rgba(0, 102, 255, 0.2);
         }
 
         .info-card.highlight {
-          background: linear-gradient(135deg, #fef2f2, #fff7ed);
-          border-color: #fca5a5;
+          background: rgba(0, 102, 255, 0.1);
+          border-color: rgba(0, 102, 255, 0.3);
         }
 
         .info-header {
@@ -923,13 +907,14 @@ export default function Reservation() {
         }
 
         .info-icon {
-          font-size: 2.5em;
+          color: #00D9FF;
+          flex-shrink: 0;
         }
 
         .info-header h3 {
           font-size: 1.4em;
           font-weight: 800;
-          color: #1a1a1a;
+          color: white;
           margin: 0;
         }
 
@@ -939,21 +924,64 @@ export default function Reservation() {
           gap: 15px;
         }
 
+        .benefits-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .benefits-list li {
+          display: flex;
+          align-items: flex-start;
+          gap: 15px;
+          padding: 15px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 12px;
+          transition: all 0.3s;
+        }
+
+        .benefits-list li:hover {
+          background: rgba(255, 255, 255, 0.06);
+          transform: translateX(5px);
+        }
+
+        .benefits-list li .check {
+          color: #00D9FF;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .benefits-list li strong {
+          display: block;
+          color: white;
+          font-size: 1.05em;
+          margin-bottom: 5px;
+        }
+
+        .benefits-list li p {
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 0.9em;
+          margin: 0;
+          line-height: 1.5;
+        }
+
         .time-slot,
-        .contact-link {
+        .meeting-option {
           display: flex;
           align-items: center;
           gap: 15px;
           padding: 15px;
-          background: #f8fafc;
+          background: rgba(255, 255, 255, 0.03);
           border-radius: 16px;
           transition: all 0.3s;
-          text-decoration: none;
         }
 
         .time-slot:hover,
-        .contact-link:hover {
-          background: #f1f5f9;
+        .meeting-option:hover {
+          background: rgba(255, 255, 255, 0.06);
           transform: translateX(5px);
         }
 
@@ -961,66 +989,42 @@ export default function Reservation() {
           opacity: 0.5;
         }
 
-        .slot-emoji,
-        .contact-icon {
+        .slot-emoji {
           font-size: 2em;
           width: 50px;
           height: 50px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #DC2626, #EA580C);
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
           border-radius: 12px;
           flex-shrink: 0;
         }
 
         .time-slot strong,
-        .contact-link strong {
+        .meeting-option strong {
           display: block;
           font-size: 0.9em;
-          color: #64748b;
+          color: rgba(255, 255, 255, 0.6);
           margin-bottom: 3px;
         }
 
         .time-slot p,
-        .contact-link p {
+        .meeting-option p {
           font-size: 1.1em;
           font-weight: 700;
-          color: #1e293b;
-          margin: 0;
-        }
-
-        .benefits-list {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .benefits-list li {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 0;
-          color: #1e293b;
-          font-weight: 600;
-          border-bottom: 1px solid rgba(220, 38, 38, 0.1);
-        }
-
-        .benefits-list li:last-child {
-          border-bottom: none;
-        }
-
-        .check {
-          width: 28px;
-          height: 28px;
-          background: #10b981;
           color: white;
-          border-radius: 50%;
+          margin: 0;
+        }
+
+        .meeting-type-info {
           display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 900;
-          flex-shrink: 0;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .meeting-option {
+          color: #00D9FF;
         }
 
         /* FORM SECTION */
@@ -1030,11 +1034,12 @@ export default function Reservation() {
         }
 
         .form-container {
-          background: white;
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 32px;
           padding: 50px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-          border: 2px solid #f1f3f5;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
         .form-container.shake {
@@ -1050,38 +1055,12 @@ export default function Reservation() {
         .form-header {
           text-align: center;
           margin-bottom: 40px;
-          position: relative;
-        }
-
-        .header-decoration {
-          display: flex;
-          justify-content: center;
-          gap: 20px;
-          margin-bottom: 20px;
-        }
-
-        .deco-element {
-          font-size: 2.5em;
-          animation: bounce 2s ease-in-out infinite;
-        }
-
-        .deco-element:nth-child(2) {
-          animation-delay: 0.2s;
-        }
-
-        .deco-element:nth-child(3) {
-          animation-delay: 0.4s;
-        }
-
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
         }
 
         .form-header h2 {
           font-size: 3em;
           font-weight: 900;
-          background: linear-gradient(135deg, #DC2626, #EA580C);
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           margin-bottom: 10px;
@@ -1089,7 +1068,7 @@ export default function Reservation() {
 
         .form-header p {
           font-size: 1.2em;
-          color: #64748b;
+          color: rgba(255, 255, 255, 0.7);
         }
 
         /* ALERTS */
@@ -1120,37 +1099,37 @@ export default function Reservation() {
         }
 
         .alert-info {
-          background: #dbeafe;
-          border: 2px solid #3b82f6;
+          background: rgba(59, 130, 246, 0.15);
+          border: 2px solid rgba(59, 130, 246, 0.3);
         }
 
         .alert-info svg {
-          stroke: #2563eb;
+          stroke: #3b82f6;
         }
 
         .alert-error {
-          background: #fee2e2;
-          border: 2px solid #ef4444;
+          background: rgba(239, 68, 68, 0.15);
+          border: 2px solid rgba(239, 68, 68, 0.3);
         }
 
         .alert-error svg {
-          stroke: #dc2626;
+          stroke: #ef4444;
         }
 
         .alert strong {
           display: block;
           font-weight: 800;
           margin-bottom: 5px;
-          color: #1e293b;
+          color: white;
         }
 
         .alert p {
           margin: 0;
-          color: #475569;
+          color: rgba(255, 255, 255, 0.8);
         }
 
         .alert a {
-          color: #2563eb;
+          color: #00D9FF;
           font-weight: 700;
           text-decoration: underline;
         }
@@ -1162,7 +1141,7 @@ export default function Reservation() {
         }
 
         .alert li {
-          color: #475569;
+          color: rgba(255, 255, 255, 0.9);
           font-weight: 600;
           margin-bottom: 3px;
         }
@@ -1179,15 +1158,15 @@ export default function Reservation() {
           margin-bottom: 15px;
           font-size: 1.1em;
           font-weight: 700;
-          color: #1e293b;
+          color: white;
         }
 
         .label-icon {
-          font-size: 1.5em;
+          color: #00D9FF;
         }
 
         .required {
-          color: #ef4444;
+          color: #FF6B35;
         }
 
         .input-enhanced {
@@ -1195,27 +1174,36 @@ export default function Reservation() {
         }
 
         .input-enhanced input,
-        .input-enhanced textarea {
+        .input-enhanced textarea,
+        .input-enhanced select {
           width: 100%;
           padding: 18px 20px;
-          border: 2px solid #e2e8f0;
+          border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 16px;
           font-size: 1.1em;
           font-family: inherit;
           transition: all 0.3s;
-          background: #f8fafc;
+          background: rgba(255, 255, 255, 0.05);
+          color: white;
+        }
+
+        .input-enhanced input::placeholder,
+        .input-enhanced textarea::placeholder {
+          color: rgba(255, 255, 255, 0.4);
         }
 
         .input-enhanced input:focus,
-        .input-enhanced textarea:focus {
+        .input-enhanced textarea:focus,
+        .input-enhanced select:focus {
           outline: none;
-          border-color: #DC2626;
-          background: white;
-          box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+          border-color: #0066FF;
+          background: rgba(255, 255, 255, 0.08);
+          box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.2);
         }
 
         .input-enhanced input:disabled,
-        .input-enhanced textarea:disabled {
+        .input-enhanced textarea:disabled,
+        .input-enhanced select:disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
@@ -1225,29 +1213,28 @@ export default function Reservation() {
           min-height: 120px;
         }
 
+        .input-enhanced select {
+          cursor: pointer;
+        }
+
+        .input-enhanced select option {
+          background: #0A0E27;
+          color: white;
+        }
+
+        .form-hint {
+          margin-top: 10px;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.9em;
+          font-style: italic;
+        }
+
         /* TIME SELECTOR */
         .time-selector {
-          display: flex;
-          flex-direction: column;
-          gap: 25px;
           padding: 25px;
-          background: #f8fafc;
+          background: rgba(255, 255, 255, 0.03);
           border-radius: 20px;
-          border: 2px solid #e2e8f0;
-        }
-
-        .service-section {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-        }
-
-        .service-label {
-          font-size: 1.2em;
-          font-weight: 800;
-          color: #1e293b;
-          padding-bottom: 10px;
-          border-bottom: 2px solid #e2e8f0;
+          border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .time-buttons {
@@ -1258,44 +1245,28 @@ export default function Reservation() {
 
         .time-btn {
           padding: 15px;
-          background: white;
-          border: 2px solid #e2e8f0;
+          background: rgba(255, 255, 255, 0.05);
+          border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 12px;
           font-size: 1.05em;
           font-weight: 700;
-          color: #475569;
+          color: rgba(255, 255, 255, 0.8);
           cursor: pointer;
           transition: all 0.3s;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .time-btn::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, #DC2626, #EA580C);
-          opacity: 0;
-          transition: opacity 0.3s;
-        }
-
-        .time-btn span {
-          position: relative;
-          z-index: 1;
         }
 
         .time-btn:hover:not(:disabled) {
-          border-color: #DC2626;
+          border-color: #0066FF;
+          background: rgba(0, 102, 255, 0.1);
           transform: translateY(-3px);
-          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
         }
 
         .time-btn.active {
-          background: linear-gradient(135deg, #DC2626, #EA580C);
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
           color: white;
           border-color: transparent;
           transform: scale(1.05);
-          box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
+          box-shadow: 0 6px 16px rgba(0, 102, 255, 0.3);
         }
 
         .time-btn:disabled {
@@ -1304,125 +1275,61 @@ export default function Reservation() {
           transform: none;
         }
 
-        /* PEOPLE SELECTOR */
-        .people-selector {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 30px;
-          padding: 40px;
-          background: linear-gradient(135deg, #fef2f2, #fff7ed);
-          border-radius: 24px;
-          border: 3px dashed rgba(220, 38, 38, 0.3);
+        /* MEETING TYPE SELECTOR */
+        .meeting-type-selector {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
         }
 
-        .people-btn {
-          width: 70px;
-          height: 70px;
-          background: linear-gradient(135deg, #DC2626, #EA580C);
-          color: white;
-          border: none;
-          border-radius: 50%;
+        .meeting-btn {
+          padding: 20px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
           cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-          box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3);
-        }
-
-        .people-btn svg {
-          width: 28px;
-          height: 28px;
-        }
-
-        .people-btn:hover:not(:disabled) {
-          transform: scale(1.15) rotate(90deg);
-          box-shadow: 0 12px 30px rgba(220, 38, 38, 0.5);
-        }
-
-        .people-btn:active:not(:disabled) {
-          transform: scale(1.05);
-        }
-
-        .people-btn:disabled {
-          opacity: 0.3;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        .people-display {
+          transition: all 0.3s;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 12px;
-          min-width: 200px;
+          gap: 10px;
+          color: rgba(255, 255, 255, 0.8);
         }
 
-        .people-number {
-          font-size: 4em;
-          font-weight: 900;
-          background: linear-gradient(135deg, #DC2626, #EA580C);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          line-height: 1;
+        .meeting-btn:hover:not(:disabled) {
+          border-color: #0066FF;
+          background: rgba(0, 102, 255, 0.1);
+          transform: translateY(-3px);
         }
 
-        .people-text {
-          font-size: 1.1em;
+        .meeting-btn.active {
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
+          color: white;
+          border-color: transparent;
+          box-shadow: 0 6px 16px rgba(0, 102, 255, 0.3);
+        }
+
+        .meeting-btn span {
           font-weight: 700;
-          color: #64748b;
-          text-transform: uppercase;
-          letter-spacing: 1px;
+          font-size: 1.05em;
         }
 
-        .people-slider {
-          width: 100%;
-          height: 8px;
-          background: #e2e8f0;
-          border-radius: 4px;
-          outline: none;
-          -webkit-appearance: none;
-          cursor: pointer;
+        .meeting-btn small {
+          font-size: 0.85em;
+          opacity: 0.8;
         }
 
-        .people-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          width: 24px;
-          height: 24px;
-          background: linear-gradient(135deg, #DC2626, #EA580C);
-          border-radius: 50%;
-          cursor: pointer;
-          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-          transition: all 0.3s;
-        }
-
-        .people-slider::-webkit-slider-thumb:hover {
-          transform: scale(1.3);
-          box-shadow: 0 6px 16px rgba(220, 38, 38, 0.6);
-        }
-
-        .people-slider::-moz-range-thumb {
-          width: 24px;
-          height: 24px;
-          background: linear-gradient(135deg, #DC2626, #EA580C);
-          border-radius: 50%;
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-          transition: all 0.3s;
-        }
-
-        .people-slider::-moz-range-thumb:hover {
-          transform: scale(1.3);
-          box-shadow: 0 6px 16px rgba(220, 38, 38, 0.6);
+        .meeting-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
         }
 
         /* SUBMIT BUTTON */
         .btn-submit {
           width: 100%;
           padding: 24px;
-          background: linear-gradient(135deg, #DC2626, #EA580C);
+          background: linear-gradient(135deg, #0066FF, #00D9FF);
           color: white;
           border: none;
           border-radius: 20px;
@@ -1434,48 +1341,18 @@ export default function Reservation() {
           justify-content: center;
           gap: 12px;
           transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          box-shadow: 0 12px 35px rgba(220, 38, 38, 0.4);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .btn-submit::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, #EA580C, #DC2626);
-          opacity: 0;
-          transition: opacity 0.3s;
-        }
-
-        .btn-submit:hover:not(:disabled)::before {
-          opacity: 1;
+          box-shadow: 0 12px 35px rgba(0, 102, 255, 0.4);
         }
 
         .btn-submit:hover:not(:disabled) {
           transform: translateY(-5px);
-          box-shadow: 0 18px 45px rgba(220, 38, 38, 0.6);
-        }
-
-        .btn-submit:active:not(:disabled) {
-          transform: translateY(-2px);
+          box-shadow: 0 18px 45px rgba(0, 102, 255, 0.6);
         }
 
         .btn-submit:disabled {
           opacity: 0.6;
           cursor: not-allowed;
           transform: none;
-        }
-
-        .btn-submit svg,
-        .btn-submit span {
-          position: relative;
-          z-index: 1;
-        }
-
-        .btn-submit svg {
-          width: 24px;
-          height: 24px;
         }
 
         .spinner {
@@ -1506,6 +1383,7 @@ export default function Reservation() {
         @media (max-width: 768px) {
           .hero {
             min-height: 350px;
+            padding: 60px 20px;
           }
 
           .hero-content h1 {
@@ -1533,18 +1411,8 @@ export default function Reservation() {
             grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
           }
 
-          .people-selector {
-            padding: 30px 20px;
-            gap: 20px;
-          }
-
-          .people-btn {
-            width: 60px;
-            height: 60px;
-          }
-
-          .people-number {
-            font-size: 3em;
+          .meeting-type-selector {
+            grid-template-columns: 1fr;
           }
 
           .btn-submit {
@@ -1566,14 +1434,6 @@ export default function Reservation() {
             font-size: 1.8em;
           }
 
-          .header-decoration {
-            gap: 15px;
-          }
-
-          .deco-element {
-            font-size: 2em;
-          }
-
           .time-buttons {
             grid-template-columns: repeat(3, 1fr);
           }
@@ -1581,18 +1441,6 @@ export default function Reservation() {
           .time-btn {
             padding: 12px;
             font-size: 0.95em;
-          }
-
-          .people-display {
-            min-width: 150px;
-          }
-
-          .people-number {
-            font-size: 2.5em;
-          }
-
-          .people-text {
-            font-size: 0.9em;
           }
         }
       `}</style>
